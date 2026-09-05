@@ -41,7 +41,11 @@ export default function Login() {
 
       alert("Login successful!");
 
-      router.push("/");
+      if (data.user.profileCompleted) {
+        router.push("/");
+      } else {
+        router.push("/profile");
+      }
     } catch (error) {
       console.error(error);
       alert("Unable to connect to the server.");
