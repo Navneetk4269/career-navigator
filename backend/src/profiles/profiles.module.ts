@@ -1,6 +1,14 @@
-import { Module } from '@nestjs/common';
+import {
+  Module,
+} from '@nestjs/common';
 
-import { MongooseModule } from '@nestjs/mongoose';
+import {
+  MongooseModule,
+} from '@nestjs/mongoose';
+
+import {
+  ConfigModule,
+} from '@nestjs/config';
 
 import {
   Profile,
@@ -12,31 +20,59 @@ import {
   UserSchema,
 } from '../users/schemas/user.schema';
 
-import { ProfilesController } from './profiles.controller';
+import {
+  ProfilesController,
+} from './profiles.controller';
 
-import { ProfilesService } from './profiles.service';
+import {
+  ProfilesService,
+} from './profiles.service';
+
 
 @Module({
+
   imports: [
+
+    ConfigModule,
+
     MongooseModule.forFeature([
+
       {
-        name: Profile.name,
-        schema: ProfileSchema,
+
+        name:
+          Profile.name,
+
+        schema:
+          ProfileSchema,
+
       },
 
       {
-        name: User.name,
-        schema: UserSchema,
+
+        name:
+          User.name,
+
+        schema:
+          UserSchema,
+
       },
+
     ]),
+
   ],
 
   controllers: [
+
     ProfilesController,
+
   ],
 
   providers: [
+
     ProfilesService,
+
   ],
+
 })
+
 export class ProfilesModule { }

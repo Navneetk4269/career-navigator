@@ -13,20 +13,41 @@ export type ProfileDocument =
     timestamps: true,
 })
 export class Profile {
+
+    /*
+        USER
+    */
+
     @Prop({
         required: true,
         unique: true,
     })
     userId!: string;
 
-    @Prop()
+
+    /*
+        EDUCATION
+    */
+
+    @Prop({
+        default: '',
+    })
     education!: string;
 
-    @Prop()
+    @Prop({
+        default: '',
+    })
     college!: string;
 
-    @Prop()
+    @Prop({
+        default: 0,
+    })
     graduationYear!: number;
+
+
+    /*
+        SKILLS
+    */
 
     @Prop({
         type: [String],
@@ -40,6 +61,11 @@ export class Profile {
     })
     interests!: string[];
 
+
+    /*
+        CAREER INFORMATION
+    */
+
     @Prop({
         default: '',
     })
@@ -49,6 +75,43 @@ export class Profile {
         default: 10,
     })
     learningHoursPerWeek!: number;
+
+
+    /*
+        GITHUB INFORMATION
+    */
+
+    @Prop({
+        default: '',
+    })
+    githubUsername!: string;
+
+    @Prop({
+        type: [String],
+        default: [],
+    })
+    githubRepositories!: string[];
+
+    @Prop({
+        type: [String],
+        default: [],
+    })
+    programmingLanguages!: string[];
+
+
+    /*
+        RESUME INFORMATION
+    */
+
+    @Prop({
+        default: '',
+    })
+    bio!: string;
+
+    @Prop({
+        default: '',
+    })
+    resumeFileName!: string;
 }
 
 export const ProfileSchema =
