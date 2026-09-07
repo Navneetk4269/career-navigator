@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Profile() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
@@ -411,6 +414,7 @@ export default function Profile() {
       }
 
       alert("Profile saved successfully!");
+      router.push("/explorer");
     } catch (error) {
       console.error("Profile save error:", error);
       alert("Unable to connect to the server.");
@@ -718,6 +722,22 @@ export default function Profile() {
                   placeholder="2027"
                   className={inputClass}
                 />
+              </Field>
+
+              <Field label="Learning Hours Per Week" className="mt-4">
+                <input
+                  type="number"
+                  min={1}
+                  max={168}
+                  value={studyHours}
+                  onChange={(e) => setStudyHours(e.target.value)}
+                  placeholder="15"
+                  className={inputClass}
+                />
+
+                <p className="mt-1.5 text-xs text-slate-400">
+                  How many hours per week can you dedicate to learning?
+                </p>
               </Field>
 
             </div>
