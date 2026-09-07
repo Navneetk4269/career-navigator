@@ -61,15 +61,15 @@ export class Profile {
     })
     interests!: string[];
 
-
     /*
-        CAREER INFORMATION
+        job description
     */
 
     @Prop({
         default: '',
     })
-    careerGoal!: string;
+    jobDescription!: string;
+
 
     @Prop({
         default: 10,

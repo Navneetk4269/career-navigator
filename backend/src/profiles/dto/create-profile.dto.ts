@@ -40,12 +40,12 @@ export class CreateProfileDto {
 
 
     /*
-        CAREER
+       job description
     */
 
     @IsOptional()
     @IsString()
-    careerGoal?: string;
+    jobDescription?: string;
 
     @IsOptional()
     @IsInt()

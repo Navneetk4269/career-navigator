@@ -3,18 +3,6 @@
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 
-const CAREER_GOALS = [
-  "Frontend Developer",
-  "Backend Developer",
-  "Full Stack Developer",
-  "Data Analyst",
-  "Data Scientist",
-  "DevOps Engineer",
-  "Mobile Developer",
-  "UI/UX Designer",
-  "Product Manager",
-];
-
 export default function Profile() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -26,7 +14,8 @@ export default function Profile() {
   const [bio, setBio] = useState("");
   const [github, setGithub] = useState("");
 
-  const [careerGoal, setCareerGoal] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+
   const [studyHours, setStudyHours] = useState("");
 
   const [skills, setSkills] = useState<string[]>([]);
@@ -93,7 +82,6 @@ export default function Profile() {
             setSkills(profile.skills || []);
             setInterests(profile.interests || []);
 
-            setCareerGoal(profile.careerGoal || "");
 
             setStudyHours(
               profile.learningHoursPerWeek?.toString() || ""
@@ -101,6 +89,7 @@ export default function Profile() {
 
             setBio(profile.bio || "");
             setGithub(profile.githubUsername || "");
+            setJobDescription(profile.jobDescription || "");
           }
         } else if (response.status === 401) {
           localStorage.removeItem("accessToken");
@@ -406,7 +395,7 @@ export default function Profile() {
           graduationYear: Number(graduationYear),
           skills,
           interests,
-          careerGoal,
+          jobDescription,
           learningHoursPerWeek: studyHours
             ? Number(studyHours)
             : undefined,
@@ -734,63 +723,6 @@ export default function Profile() {
             </div>
           </section>
 
-          {/* Career Goal */}
-          <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
-
-            <SectionHeading
-              title="Career Goal"
-              subtitle="What role are you working toward?"
-              color="blue"
-              icon={
-                <path
-                  d="M3 3v18h18M7 15l4-4 3 3 5-6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              }
-            />
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
-              <Field label="Target Role *">
-                <select
-                  required
-                  value={careerGoal}
-                  onChange={(e) => setCareerGoal(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="" disabled>
-                    Select a career path
-                  </option>
-
-                  {CAREER_GOALS.map((goal) => (
-                    <option key={goal} value={goal}>
-                      {goal}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Weekly Study Hours">
-                <input
-                  type="number"
-                  min={1}
-                  max={80}
-                  value={studyHours}
-                  onChange={(e) => setStudyHours(e.target.value)}
-                  placeholder="e.g. 10"
-                  className={inputClass}
-                />
-              </Field>
-
-            </div>
-
-            <p className="mt-2 text-xs text-slate-400">
-              Used to build your personalized, time-based learning roadmap.
-            </p>
-          </section>
 
           {/* Skills & Interests */}
           <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
@@ -1076,6 +1008,65 @@ export default function Profile() {
                 )}
 
               </button>
+
+            </div>
+
+          </section>
+
+          {/* Job Description */}
+          <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
+
+            <SectionHeading
+              title="Target Job Description"
+              subtitle="Paste a job description you want to analyze against your profile."
+              color="blue"
+              icon={
+                <path
+                  d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              }
+            />
+
+            <Field label="Job Description">
+
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste the complete job description here...
+
+Example:
+We are looking for a Frontend Developer with experience in React, JavaScript, TypeScript, REST APIs and Next.js."
+                rows={10}
+                className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-[15px] text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+
+            </Field>
+
+            <div className="mt-3 flex items-start gap-2 rounded-xl bg-blue-50 p-4 text-sm text-blue-700">
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="mt-0.5 h-5 w-5 shrink-0"
+              >
+                <path
+                  d="M12 9v4m0 4h.01M10.3 3.86 2.82 17a2 2 0 0 0 1.74 3h14.88a2 2 0 0 0 1.74-3L13.7 3.86a2 2 0 0 0-3.48 0Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+
+              <p>
+                This job description will be used to compare your existing
+                skills with the requirements and generate missing skills,
+                priority levels, explanations, and a learning roadmap.
+              </p>
 
             </div>
 
