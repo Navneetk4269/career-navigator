@@ -2,20 +2,11 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
-
-const CAREER_GOALS = [
-  "Frontend Developer",
-  "Backend Developer",
-  "Full Stack Developer",
-  "Data Analyst",
-  "Data Scientist",
-  "DevOps Engineer",
-  "Mobile Developer",
-  "UI/UX Designer",
-  "Product Manager",
-];
+import { useRouter } from "next/navigation";
 
 export default function Profile() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
@@ -26,7 +17,8 @@ export default function Profile() {
   const [bio, setBio] = useState("");
   const [github, setGithub] = useState("");
 
-  const [careerGoal, setCareerGoal] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+
   const [studyHours, setStudyHours] = useState("");
 
   const [skills, setSkills] = useState<string[]>([]);
@@ -41,6 +33,9 @@ export default function Profile() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [syncingGithub, setSyncingGithub] = useState(false);
+  const [extractingResume, setExtractingResume] = useState(false);
 
   // Load existing user/profile
   useEffect(() => {
@@ -82,15 +77,22 @@ export default function Profile() {
           if (profile) {
             setEducation(profile.education || "");
             setCollege(profile.college || "");
+
             setGraduationYear(
               profile.graduationYear?.toString() || ""
             );
+
             setSkills(profile.skills || []);
             setInterests(profile.interests || []);
-            setCareerGoal(profile.careerGoal || "");
+
+
             setStudyHours(
               profile.learningHoursPerWeek?.toString() || ""
             );
+
+            setBio(profile.bio || "");
+            setGithub(profile.githubUsername || "");
+            setJobDescription(profile.jobDescription || "");
           }
         } else if (response.status === 401) {
           localStorage.removeItem("accessToken");
@@ -179,6 +181,197 @@ export default function Profile() {
     }
   }
 
+  async function handleGithubSync() {
+
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      alert("Please sign in first.");
+      return;
+    }
+
+    if (!github.trim()) {
+      alert("Please enter your GitHub username or URL.");
+      return;
+    }
+
+    setSyncingGithub(true);
+
+    try {
+
+      const response = await fetch(
+        "http://localhost:5000/profiles/github/sync",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+
+          body: JSON.stringify({
+            githubUrl: github.trim(),
+          }),
+        }
+      );
+
+      const text = await response.text();
+
+      const data = text
+        ? JSON.parse(text)
+        : null;
+
+      if (!response.ok) {
+
+        alert(
+          data?.message ||
+          "Failed to sync GitHub profile."
+        );
+
+        return;
+      }
+
+      /*
+        UPDATE FRONTEND PROFILE DATA
+      */
+
+      if (data?.profile) {
+
+        setSkills(data.profile.skills || []);
+
+        setGithub(
+          data.profile.githubUsername ||
+          github
+        );
+
+        setBio(
+          data.profile.bio ||
+          bio
+        );
+
+      }
+
+      alert("GitHub synced successfully!");
+
+    } catch (error) {
+
+      console.error(
+        "GitHub sync error:",
+        error
+      );
+
+      alert("Unable to sync GitHub.");
+
+    } finally {
+
+      setSyncingGithub(false);
+
+    }
+  }
+
+  async function handleResumeExtraction() {
+
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      alert("Please sign in first.");
+      return;
+    }
+
+    if (!resumeFile) {
+      alert("Please select a resume first.");
+      return;
+    }
+
+    setExtractingResume(true);
+
+    try {
+
+      const formData = new FormData();
+
+      formData.append(
+        "resume",
+        resumeFile
+      );
+
+      const response = await fetch(
+        "http://localhost:5000/profiles/resume/extract",
+        {
+          method: "POST",
+
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+
+          body: formData,
+        }
+      );
+
+      const text = await response.text();
+
+      const data = text
+        ? JSON.parse(text)
+        : null;
+
+      if (!response.ok) {
+
+        alert(
+          data?.message ||
+          "Failed to extract resume data."
+        );
+
+        return;
+      }
+
+      /*
+        UPDATE FRONTEND WITH
+        EXTRACTED DATABASE DATA
+      */
+
+      if (data?.profile) {
+
+        const profile = data.profile;
+
+        setSkills(profile.skills || []);
+
+        setEducation(
+          profile.education || ""
+        );
+
+        setCollege(
+          profile.college || ""
+        );
+
+        setGraduationYear(
+          profile.graduationYear
+            ? profile.graduationYear.toString()
+            : ""
+        );
+
+        setBio(profile.bio || "");
+
+      }
+
+      alert("Resume extracted successfully!");
+
+    } catch (error) {
+
+      console.error(
+        "Resume extraction error:",
+        error
+      );
+
+      alert(
+        "Unable to extract resume data."
+      );
+
+    } finally {
+
+      setExtractingResume(false);
+
+    }
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -205,7 +398,7 @@ export default function Profile() {
           graduationYear: Number(graduationYear),
           skills,
           interests,
-          careerGoal,
+          jobDescription,
           learningHoursPerWeek: studyHours
             ? Number(studyHours)
             : undefined,
@@ -221,6 +414,7 @@ export default function Profile() {
       }
 
       alert("Profile saved successfully!");
+      router.push("/explorer");
     } catch (error) {
       console.error("Profile save error:", error);
       alert("Unable to connect to the server.");
@@ -315,6 +509,107 @@ export default function Profile() {
             </p>
           </div>
         </div>
+
+        {/* ======================================
+    EXTRACTED SKILLS OVERVIEW
+====================================== */}
+
+        <section className="mb-8 rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+            <div>
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-blue-600 text-white">
+
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="h-5 w-5"
+                  >
+                    <path
+                      d="M9 11l3 3L22 4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+
+                    <path
+                      d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+
+                </div>
+
+                <div>
+
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Your Skills
+                  </h2>
+
+                  <p className="text-sm text-slate-500">
+                    Skills from your profile, resume, and GitHub.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+
+              {skills.length} Skills
+
+            </div>
+
+          </div>
+
+
+          {/* Skills */}
+
+          <div className="mt-6 flex flex-wrap gap-2">
+
+            {skills.length > 0 ? (
+
+              skills.map((skill) => (
+
+                <span
+                  key={skill}
+                  className="rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700"
+                >
+                  {skill}
+                </span>
+
+              ))
+
+            ) : (
+
+              <div className="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center">
+
+                <p className="font-medium text-slate-600">
+                  No skills detected yet
+                </p>
+
+                <p className="mt-1 text-sm text-slate-400">
+                  Add skills manually, extract your resume, or sync your GitHub profile.
+                </p>
+
+              </div>
+
+            )}
+
+          </div>
+
+        </section>
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -429,66 +724,25 @@ export default function Profile() {
                 />
               </Field>
 
-            </div>
-          </section>
-
-          {/* Career Goal */}
-          <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
-
-            <SectionHeading
-              title="Career Goal"
-              subtitle="What role are you working toward?"
-              color="blue"
-              icon={
-                <path
-                  d="M3 3v18h18M7 15l4-4 3 3 5-6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              }
-            />
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
-              <Field label="Target Role *">
-                <select
-                  required
-                  value={careerGoal}
-                  onChange={(e) => setCareerGoal(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="" disabled>
-                    Select a career path
-                  </option>
-
-                  {CAREER_GOALS.map((goal) => (
-                    <option key={goal} value={goal}>
-                      {goal}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Weekly Study Hours">
+              <Field label="Learning Hours Per Week" className="mt-4">
                 <input
                   type="number"
                   min={1}
-                  max={80}
+                  max={168}
                   value={studyHours}
                   onChange={(e) => setStudyHours(e.target.value)}
-                  placeholder="e.g. 10"
+                  placeholder="15"
                   className={inputClass}
                 />
+
+                <p className="mt-1.5 text-xs text-slate-400">
+                  How many hours per week can you dedicate to learning?
+                </p>
               </Field>
 
             </div>
-
-            <p className="mt-2 text-xs text-slate-400">
-              Used to build your personalized, time-based learning roadmap.
-            </p>
           </section>
+
 
           {/* Skills & Interests */}
           <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
@@ -509,31 +763,85 @@ export default function Profile() {
             />
 
             {/* GitHub */}
+
             <Field label="GitHub Username / URL">
-              <div className="relative">
 
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="h-5 w-5"
-                  >
-                    <path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.5 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.22-3.37-1.22-.46-1.2-1.11-1.53-1.11-1.53-.9-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05a9.3 9.3 0 0 1 2.5-.35c.85 0 1.71.12 2.5.35 1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .28.18.61.69.5A10.26 10.26 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z" />
-                  </svg>
-                </span>
+              <div className="flex flex-col gap-3 sm:flex-row">
 
-                <input
-                  type="text"
-                  value={github}
-                  onChange={(e) => setGithub(e.target.value)}
-                  placeholder="github.com/yourusername"
-                  className={`${inputClass} pl-11`}
-                />
+                <div className="relative flex-1">
+
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="h-5 w-5"
+                    >
+                      <path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.5 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.22-3.37-1.22-.46-1.2-1.11-1.53-1.11-1.53-.9-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05a9.3 9.3 0 0 1 2.5-.35c.85 0 1.71.12 2.5.35 1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .28.18.61.69.5A10.26 10.26 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z" />
+                    </svg>
+
+                  </span>
+
+
+                  <input
+                    type="text"
+                    value={github}
+                    onChange={(e) => setGithub(e.target.value)}
+                    placeholder="github.com/yourusername"
+                    className={`${inputClass} pl-11`}
+                  />
+
+                </div>
+
+
+                <button
+                  type="button"
+                  onClick={handleGithubSync}
+                  disabled={syncingGithub}
+                  className="flex h-[52px] items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+
+                  {syncingGithub ? (
+                    "Syncing..."
+                  ) : (
+                    <>
+                      <span>Sync GitHub</span>
+
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="h-4 w-4"
+                      >
+                        <path
+                          d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+
+                        <path
+                          d="M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </>
+                  )}
+
+                </button>
+
               </div>
 
+
               <p className="mt-1.5 text-xs text-slate-400">
-                GitHub integration will be connected separately.
+
+                Sync your repositories and programming skills directly from GitHub.
+
               </p>
+
             </Field>
 
             {/* Skills */}
@@ -637,11 +945,10 @@ export default function Profile() {
                 onDragLeave={() => setDragActive(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-8 text-center transition ${
-                  dragActive
-                    ? "border-orange-400 bg-orange-50"
-                    : "border-slate-300 bg-slate-50 hover:border-orange-300 hover:bg-orange-50/50"
-                }`}
+                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-8 text-center transition ${dragActive
+                  ? "border-orange-400 bg-orange-50"
+                  : "border-slate-300 bg-slate-50 hover:border-orange-300 hover:bg-orange-50/50"
+                  }`}
               >
 
                 <input
@@ -682,12 +989,106 @@ export default function Profile() {
                   </>
                 )}
               </div>
-
               <p className="mt-1.5 text-xs text-slate-400">
-                Resume upload will be connected to the backend separately.
+                Upload your resume and click Extract Resume Data to automatically detect
+                skills, education, college, graduation year, and bio.
               </p>
 
             </Field>
+
+            <div className="mt-4 flex justify-end">
+
+              <button
+                type="button"
+                onClick={handleResumeExtraction}
+                disabled={!resumeFile || extractingResume}
+                className="flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-orange-500/20 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+
+                {extractingResume ? (
+                  "Extracting..."
+                ) : (
+                  <>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="h-4 w-4"
+                    >
+                      <path
+                        d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+
+                    Extract Resume Data
+                  </>
+                )}
+
+              </button>
+
+            </div>
+
+          </section>
+
+          {/* Job Description */}
+          <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
+
+            <SectionHeading
+              title="Target Job Description"
+              subtitle="Paste a job description you want to analyze against your profile."
+              color="blue"
+              icon={
+                <path
+                  d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              }
+            />
+
+            <Field label="Job Description">
+
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste the complete job description here...
+
+Example:
+We are looking for a Frontend Developer with experience in React, JavaScript, TypeScript, REST APIs and Next.js."
+                rows={10}
+                className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-[15px] text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+
+            </Field>
+
+            <div className="mt-3 flex items-start gap-2 rounded-xl bg-blue-50 p-4 text-sm text-blue-700">
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="mt-0.5 h-5 w-5 shrink-0"
+              >
+                <path
+                  d="M12 9v4m0 4h.01M10.3 3.86 2.82 17a2 2 0 0 0 1.74 3h14.88a2 2 0 0 0 1.74-3L13.7 3.86a2 2 0 0 0-3.48 0Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+
+              <p>
+                This job description will be used to compare your existing
+                skills with the requirements and generate missing skills,
+                priority levels, explanations, and a learning roadmap.
+              </p>
+
+            </div>
 
           </section>
 

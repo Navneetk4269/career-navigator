@@ -15,6 +15,13 @@ export default function Home() {
 
           <div className="flex items-center gap-3">
             <Link
+              href="/explorer"
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+            >
+              Career Explorer
+            </Link>
+
+            <Link
               href="/profile"
               className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
             >

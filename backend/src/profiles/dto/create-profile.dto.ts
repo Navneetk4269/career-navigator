@@ -1,3 +1,4 @@
+
 import {
     IsArray,
     IsInt,
@@ -7,28 +8,76 @@ import {
 } from 'class-validator';
 
 export class CreateProfileDto {
-    @IsString()
-    @IsNotEmpty()
-    education!: string;
 
-    @IsString()
-    @IsNotEmpty()
-    college!: string;
+    /*
+        EDUCATION
+    */
 
+    @IsOptional()
+    @IsString()
+    education?: string;
+
+    @IsOptional()
+    @IsString()
+    college?: string;
+
+    @IsOptional()
     @IsInt()
-    graduationYear!: number;
+    graduationYear?: number;
 
+
+    /*
+        SKILLS
+    */
+
+    @IsOptional()
     @IsArray()
-    skills!: string[];
+    skills?: string[];
 
+    @IsOptional()
     @IsArray()
-    interests!: string[];
+    interests?: string[];
 
+
+    /*
+       job description
+    */
+
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    careerGoal!: string;
+    jobDescription?: string;
 
     @IsOptional()
     @IsInt()
     learningHoursPerWeek?: number;
+
+
+    /*
+        GITHUB
+    */
+
+    @IsOptional()
+    @IsString()
+    githubUsername?: string;
+
+    @IsOptional()
+    @IsArray()
+    githubRepositories?: string[];
+
+    @IsOptional()
+    @IsArray()
+    programmingLanguages?: string[];
+
+
+    /*
+        RESUME
+    */
+
+    @IsOptional()
+    @IsString()
+    bio?: string;
+
+    @IsOptional()
+    @IsString()
+    resumeFileName?: string;
 }
