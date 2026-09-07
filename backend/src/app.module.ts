@@ -5,6 +5,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { JobAnalysisModule } from './job-analysis/job-analysis.module';
+import { CareersModule } from './careers/careers.module';
 
 @Module({
   imports: [
@@ -29,6 +30,8 @@ import { JobAnalysisModule } from './job-analysis/job-analysis.module';
     ProfilesModule,
 
     JobAnalysisModule,
+
+    CareersModule,
 
   ],
 })
