@@ -7,11 +7,13 @@ export type CareerDocument = HydratedDocument<Career>;
     timestamps: true,
 })
 export class Career {
+
     @Prop({
         required: true,
         index: true,
     })
     userId!: string;
+
 
     @Prop({
         type: [
@@ -68,6 +70,27 @@ export class Career {
             tasks: string[];
         }[];
     }[];
+
+
+    // ⭐ The roadmap currently selected by the user
+    @Prop({
+        type: Object,
+        default: null,
+    })
+    selectedRoadmap!: any;
+
+
+    @Prop({
+        type: Date,
+        default: null,
+    })
+    selectedAt!: Date | null;
+
+    // ⭐ Automatically managed by Mongoose
+    // because timestamps: true is enabled
+    createdAt?: Date;
+
+    updatedAt?: Date;
 }
 
 export const CareerSchema =
