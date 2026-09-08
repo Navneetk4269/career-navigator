@@ -573,14 +573,24 @@ Return exactly this structure:
             // =====================================
 
             const careerAnalysis =
-                await this.careerModel.create({
-
-                    userId,
-
-                    recommendations:
-                        result.recommendations,
-
-                });
+                await this.careerModel.findOneAndUpdate(
+                    {
+                        userId,
+                    },
+                    {
+                        $set: {
+                            recommendations:
+                                result.recommendations,
+                        },
+                        $setOnInsert: {
+                            userId,
+                        },
+                    },
+                    {
+                        returnDocument: 'after',
+                        upsert: true,
+                    }
+                );
 
 
             // =====================================
@@ -624,9 +634,77 @@ Return exactly this structure:
 
     }
 
+    async selectRoadmap(
+        userId: string,
+        recommendation: any,
+    ) {
+        const career = await this.careerModel.findOne({
+            userId,
+        });
+
+        if (!career) {
+            throw new NotFoundException(
+                'Career recommendations not found. Please generate recommendations first.',
+            );
+        }
+
+        career.selectedRoadmap = recommendation;
+
+        career.selectedAt = new Date();
+
+        await career.save();
+
+        return {
+            message: 'Roadmap selected successfully.',
+            selectedRoadmap: career.selectedRoadmap,
+            selectedAt: career.selectedAt,
+        };
+    }
+
 
     // =====================================
-    // GET LATEST CAREER RECOMMENDATION
+    // GET USER'S SELECTED ROADMAP
+    // =====================================
+
+    async getMyRoadmap(userId: string) {
+
+        const career =
+            await this.careerModel.findOne({
+                userId,
+            });
+
+        if (!career) {
+
+            throw new NotFoundException(
+                'Career recommendations not found.',
+            );
+
+        }
+
+        if (!career.selectedRoadmap) {
+
+            return {
+                message: 'No roadmap selected yet.',
+                selectedRoadmap: null,
+                selectedAt: null,
+            };
+
+        }
+
+        return {
+            message:
+                'Selected roadmap retrieved successfully.',
+
+            selectedRoadmap:
+                career.selectedRoadmap,
+
+            selectedAt:
+                career.selectedAt,
+        };
+    }
+
+    // =====================================
+    // GET LATEST CAREER RECOMMENDATIONS
     // =====================================
 
     async getLatestRecommendation(
@@ -634,14 +712,9 @@ Return exactly this structure:
     ) {
 
         const career =
-            await this.careerModel
-                .findOne({
-                    userId,
-                })
-                .sort({
-                    createdAt: -1,
-                });
-
+            await this.careerModel.findOne({
+                userId,
+            });
 
         if (!career) {
 
@@ -651,9 +724,13 @@ Return exactly this structure:
 
         }
 
+        return {
+            recommendations:
+                career.recommendations,
 
-        return career;
-
+            generatedAt:
+                career.updatedAt,
+        };
     }
 
 }
