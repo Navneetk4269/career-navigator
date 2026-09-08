@@ -387,7 +387,18 @@ Return exactly this structure:
     }
   ],
 
- "roadmap": [
+"roadmap": [
+  {
+    "phase": "",
+    "skills": [],
+    "description": "",
+    "estimatedDuration": "",
+    "weeklyHours": 0,
+    "tasks": []
+  }
+],
+
+"generalRoadmap": [
   {
     "phase": "",
     "skills": [],
@@ -523,6 +534,9 @@ Return exactly this structure:
                     roadmap:
                         result.roadmap || [],
 
+                    generalRoadmap:
+                        result.generalRoadmap || [],
+
                 });
 
 
@@ -553,6 +567,36 @@ Return exactly this structure:
             );
 
         }
+
+    }
+
+
+    // Get the user's latest job analysis
+    async getLatestAnalysis(userId: string) {
+
+        const analysis =
+            await this.jobAnalysisModel
+                .findOne({ userId })
+                .sort({ createdAt: -1 });
+
+
+        if (!analysis) {
+
+            throw new NotFoundException(
+                'No job description analysis found.',
+            );
+
+        }
+
+
+        return {
+
+            message:
+                'Latest job analysis retrieved successfully.',
+
+            analysis,
+
+        };
 
     }
 
