@@ -1,5 +1,6 @@
 import {
     Controller,
+    Get,
     Post,
     Req,
     UseGuards,
@@ -39,6 +40,15 @@ export class JobAnalysisController {
             req.user.userId,
         );
 
+    }
+
+    @Get('latest')
+    async getLatestAnalysis(
+        @Req() req: any,
+    ) {
+        return this.jobAnalysisService.getLatestAnalysis(
+            req.user.userId,
+        );
     }
 
 }

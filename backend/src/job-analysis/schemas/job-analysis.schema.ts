@@ -1,52 +1,24 @@
-import {
-    Prop,
-    Schema,
-    SchemaFactory,
-} from '@nestjs/mongoose';
-
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-export type JobAnalysisDocument =
-    HydratedDocument<JobAnalysis>;
+export type JobAnalysisDocument = HydratedDocument<JobAnalysis>;
 
-
-@Schema({
-    timestamps: true,
-})
+@Schema({ timestamps: true })
 export class JobAnalysis {
-
-    @Prop({
-        required: true,
-    })
+    @Prop({ required: true })
     userId!: string;
 
-
-    @Prop({
-        required: true,
-    })
+    @Prop({ required: true })
     jobDescription!: string;
 
-
-    @Prop({
-        min: 0,
-        max: 100,
-    })
+    @Prop({ min: 0, max: 100 })
     matchScore!: number;
 
-
-    @Prop({
-        type: [String],
-        default: [],
-    })
+    @Prop({ type: [String], default: [] })
     matchedSkills!: string[];
 
-
-    @Prop({
-        type: [String],
-        default: [],
-    })
+    @Prop({ type: [String], default: [] })
     strengths!: string[];
-
 
     @Prop({
         type: [
@@ -62,11 +34,7 @@ export class JobAnalysis {
         explanation: string;
     }[];
 
-
-    @Prop({
-        type: [Object],
-        default: [],
-    })
+    @Prop({ type: [Object], default: [] })
     missingSkills!: {
         skill: string;
         priority: string;
@@ -74,11 +42,7 @@ export class JobAnalysis {
         reason: string;
     }[];
 
-
-    @Prop({
-        type: [Object],
-        default: [],
-    })
+    @Prop({ type: [Object], default: [] })
     roadmap!: {
         phase: string;
         skills: string[];
@@ -87,8 +51,17 @@ export class JobAnalysis {
         weeklyHours: number;
         tasks: string[];
     }[];
-}
 
+    @Prop({ type: [Object], default: [] })
+    generalRoadmap!: {
+        phase: string;
+        skills: string[];
+        description: string;
+        estimatedDuration: string;
+        weeklyHours: number;
+        tasks: string[];
+    }[];
+}
 
 export const JobAnalysisSchema =
     SchemaFactory.createForClass(JobAnalysis);
