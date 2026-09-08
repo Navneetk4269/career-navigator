@@ -264,192 +264,192 @@ export default function Explorer() {
           </div>
 
           {recommendation ? (
-              <div className="mt-6 space-y-6">
+            <div className="mt-6 space-y-6">
 
-                {/* Summary */}
-                <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-blue-600">
-                        AI Career Analysis
-                      </p>
+              {/* Summary */}
+              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-blue-600">
+                      AI Career Analysis
+                    </p>
 
-                      <p className="mt-1 text-sm text-slate-600">
-                        Based on your profile, skills, interests, and goals.
-                      </p>
-                    </div>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Based on your profile, skills, interests, and goals.
+                    </p>
+                  </div>
 
-                    <div className="rounded-xl bg-white px-5 py-3 text-center shadow-sm">
-                      <p className="text-2xl font-bold text-slate-900">
-                        {recommendation.learningHoursPerWeek}
-                      </p>
+                  <div className="rounded-xl bg-white px-5 py-3 text-center shadow-sm">
+                    <p className="text-2xl font-bold text-slate-900">
+                      {recommendation.learningHoursPerWeek}
+                    </p>
 
-                      <p className="text-xs font-medium text-slate-500">
-                        Hours / Week
-                      </p>
-                    </div>
+                    <p className="text-xs font-medium text-slate-500">
+                      Hours / Week
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                {/* Career recommendations */}
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">
-                    Recommended Career Paths
-                  </h3>
+              {/* Career recommendations */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Recommended Career Paths
+                </h3>
 
-                  <div className="mt-4 space-y-5">
-                    {recommendation.recommendations?.map(
-                      (career: any, index: number) => (
-                        <div
-                          key={index}
-                          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                        >
+                <div className="mt-4 space-y-5">
+                  {recommendation.recommendations?.map(
+                    (career: any, index: number) => (
+                      <div
+                        key={index}
+                        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                      >
 
-                          {/* Career title + score */}
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        {/* Career title + score */}
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 
-                            <div className="flex items-start gap-4">
-                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
-                                <svg
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  className="h-6 w-6"
-                                >
-                                  <path
-                                    d="M4 20V10M10 20V4M16 20v-7M22 20H2"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                  />
-                                </svg>
-                              </div>
-
-                              <div>
-                                <h4 className="text-xl font-bold text-slate-900">
-                                  {career.career}
-                                </h4>
-
-                                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                                  {career.description}
-                                </p>
-                              </div>
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                className="h-6 w-6"
+                              >
+                                <path
+                                  d="M4 20V10M10 20V4M16 20v-7M22 20H2"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
                             </div>
 
-                            {/* Match score */}
-                            <div className="shrink-0 text-center">
-                              <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-orange-100 bg-orange-50">
-                                <span className="text-lg font-bold text-orange-600">
-                                  {career.matchScore}%
-                                </span>
-                              </div>
+                            <div>
+                              <h4 className="text-xl font-bold text-slate-900">
+                                {career.career}
+                              </h4>
 
-                              <p className="mt-1 text-xs font-medium text-slate-500">
-                                Match
+                              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                                {career.description}
                               </p>
                             </div>
                           </div>
 
-                          {/* Why recommended */}
-                          {career.whyRecommended?.length > 0 && (
-                            <div className="mt-6 border-t border-slate-100 pt-5">
-                              <h5 className="text-sm font-bold text-slate-900">
-                                Why this career?
-                              </h5>
-
-                              <div className="mt-3 space-y-2">
-                                {career.whyRecommended.map(
-                                  (reason: string, reasonIndex: number) => (
-                                    <div
-                                      key={reasonIndex}
-                                      className="flex items-start gap-2 text-sm text-slate-600"
-                                    >
-                                      <span className="mt-1 text-orange-500">
-                                        ✓
-                                      </span>
-
-                                      <span>{reason}</span>
-                                    </div>
-                                  )
-                                )}
-                              </div>
+                          {/* Match score */}
+                          <div className="shrink-0 text-center">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-orange-100 bg-orange-50">
+                              <span className="text-lg font-bold text-orange-600">
+                                {career.matchScore}%
+                              </span>
                             </div>
-                          )}
 
-                          {/* Strengths */}
-                          {career.strengthsUsed?.length > 0 && (
-                            <div className="mt-6">
-                              <h5 className="text-sm font-bold text-slate-900">
-                                Your Strengths
-                              </h5>
-
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {career.strengthsUsed.map(
-                                  (strength: string, strengthIndex: number) => (
-                                    <span
-                                      key={strengthIndex}
-                                      className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600"
-                                    >
-                                      {strength}
-                                    </span>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Missing skills */}
-                          {career.missingSkills?.length > 0 && (
-                            <div className="mt-6">
-                              <h5 className="text-sm font-bold text-slate-900">
-                                Skills to Develop
-                              </h5>
-
-                              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                {career.missingSkills.map(
-                                  (item: any, skillIndex: number) => (
-                                    <div
-                                      key={skillIndex}
-                                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
-                                    >
-                                      <span className="text-sm font-medium text-slate-700">
-                                        {item.skill}
-                                      </span>
-
-                                      <span
-                                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${priorityBadgeClasses(
-                                          item.priority
-                                        )}`}
-                                      >
-                                        {item.priority}
-                                      </span>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* View roadmap */}
-                          <div className="mt-6 border-t border-slate-100 pt-5">
-                            <button
-                              onClick={() => {
-                                setSelectedRecommendation(career);
-                                setRoadmapOpen(true);
-                              }}
-                              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                            >
-                              View Roadmap
-                            </button>
+                            <p className="mt-1 text-xs font-medium text-slate-500">
+                              Match
+                            </p>
                           </div>
-
                         </div>
-                      )
-                    )}
-                  </div>
-                </div>
 
+                        {/* Why recommended */}
+                        {career.whyRecommended?.length > 0 && (
+                          <div className="mt-6 border-t border-slate-100 pt-5">
+                            <h5 className="text-sm font-bold text-slate-900">
+                              Why this career?
+                            </h5>
+
+                            <div className="mt-3 space-y-2">
+                              {career.whyRecommended.map(
+                                (reason: string, reasonIndex: number) => (
+                                  <div
+                                    key={reasonIndex}
+                                    className="flex items-start gap-2 text-sm text-slate-600"
+                                  >
+                                    <span className="mt-1 text-orange-500">
+                                      ✓
+                                    </span>
+
+                                    <span>{reason}</span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Strengths */}
+                        {career.strengthsUsed?.length > 0 && (
+                          <div className="mt-6">
+                            <h5 className="text-sm font-bold text-slate-900">
+                              Your Strengths
+                            </h5>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {career.strengthsUsed.map(
+                                (strength: string, strengthIndex: number) => (
+                                  <span
+                                    key={strengthIndex}
+                                    className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600"
+                                  >
+                                    {strength}
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Missing skills */}
+                        {career.missingSkills?.length > 0 && (
+                          <div className="mt-6">
+                            <h5 className="text-sm font-bold text-slate-900">
+                              Skills to Develop
+                            </h5>
+
+                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                              {career.missingSkills.map(
+                                (item: any, skillIndex: number) => (
+                                  <div
+                                    key={skillIndex}
+                                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+                                  >
+                                    <span className="text-sm font-medium text-slate-700">
+                                      {item.skill}
+                                    </span>
+
+                                    <span
+                                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${priorityBadgeClasses(
+                                        item.priority
+                                      )}`}
+                                    >
+                                      {item.priority}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* View roadmap */}
+                        <div className="mt-6 border-t border-slate-100 pt-5">
+                          <button
+                            onClick={() => {
+                              setSelectedRecommendation(career);
+                              setRoadmapOpen(true);
+                            }}
+                            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                          >
+                            View Roadmap
+                          </button>
+                        </div>
+
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-            ) : (
+
+            </div>
+          ) : (
             <div className="mt-6 flex flex-col items-start">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -518,8 +518,8 @@ export default function Explorer() {
               {analyzingJob
                 ? "Analyzing..."
                 : jobAnalysis
-                ? "Re-analyze Job Description"
-                : "Analyze Job Description"}
+                  ? "Re-analyze Job Description"
+                  : "Analyze Job Description"}
             </button>
           </div>
 
