@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePopup } from "../components/PopupProvider";
 
 export default function Signup() {
+  const { showPopup } = usePopup();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -33,16 +35,16 @@ export default function Signup() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Signup failed");
+        showPopup(data.message || "Signup failed");
         return;
       }
 
-      alert("Account created successfully!");
+      showPopup("Account created successfully!");
 
       router.push("/login");
     } catch (error) {
       console.error(error);
-      alert("Unable to connect to the server.");
+      showPopup("Unable to connect to the server.");
     }
   }
 

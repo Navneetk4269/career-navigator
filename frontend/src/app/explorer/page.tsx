@@ -151,40 +151,107 @@ export default function Explorer() {
   return (
     <main className="min-h-screen bg-white">
 
-      {/* Navbar */}
-      <nav className="sticky top-0 z-20 border-b border-slate-100 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-6">
+      {/* ================= NAVBAR ================= */}
+      <nav className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">
 
-          <Link href="/" className="text-xl font-black tracking-tight">
-            <span className="text-orange-500">CAREER</span>
-            <span className="text-blue-600">NAVIGATOR</span>
+          <Link
+            href="/"
+            className="group flex items-center gap-3"
+          >
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-white shadow-lg shadow-orange-500/20 transition duration-300 group-hover:scale-105 group-hover:rotate-3">
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-5 w-5"
+              >
+
+                <path
+                  d="M4 17 10 11l4 4 6-8"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <path
+                  d="M16 7h4v4"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+              </svg>
+
+            </div>
+
+            <div>
+              <div className="text-lg font-black tracking-tight">
+                <span className="text-orange-500">CAREER</span>
+                <span className="ml-1 text-blue-600">NAVIGATOR</span>
+              </div>
+
+              <p className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:block">
+                Build your future
+              </p>
+            </div>
+
           </Link>
 
-          <div className="flex items-center gap-3">
+
+
+          {/* NAVIGATION LINKS */}
+          <div className="flex items-center gap-1 sm:gap-2">
+
+            {/* HOME */}
+            <Link
+              href="/"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 md:block"
+            >
+              Home
+            </Link>
+
+            <Link
+              href="/dashboard"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
+            >
+              Dashboard
+            </Link>
+
+
+            {/* CAREER EXPLORER - ACTIVE */}
             <Link
               href="/explorer"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+              className="hidden rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-600 transition-all duration-200 hover:bg-blue-100 lg:block"
             >
               Career Explorer
             </Link>
 
+
+            {/* MY ROADMAP */}
+            <Link
+              href="/my-roadmap"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
+            >
+              My Roadmap
+            </Link>
+
+
+            {/* PROFILE */}
             <Link
               href="/profile"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 md:block"
             >
               Profile
             </Link>
 
-            <Link
-              href="/"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-            >
-              Home
-            </Link>
           </div>
+
         </div>
       </nav>
-
       {/* Page header */}
       <section className="relative overflow-hidden bg-slate-50">
 
@@ -264,192 +331,192 @@ export default function Explorer() {
           </div>
 
           {recommendation ? (
-              <div className="mt-6 space-y-6">
+            <div className="mt-6 space-y-6">
 
-                {/* Summary */}
-                <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-blue-600">
-                        AI Career Analysis
-                      </p>
+              {/* Summary */}
+              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-blue-600">
+                      AI Career Analysis
+                    </p>
 
-                      <p className="mt-1 text-sm text-slate-600">
-                        Based on your profile, skills, interests, and goals.
-                      </p>
-                    </div>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Based on your profile, skills, interests, and goals.
+                    </p>
+                  </div>
 
-                    <div className="rounded-xl bg-white px-5 py-3 text-center shadow-sm">
-                      <p className="text-2xl font-bold text-slate-900">
-                        {recommendation.learningHoursPerWeek}
-                      </p>
+                  <div className="rounded-xl bg-white px-5 py-3 text-center shadow-sm">
+                    <p className="text-2xl font-bold text-slate-900">
+                      {recommendation.learningHoursPerWeek}
+                    </p>
 
-                      <p className="text-xs font-medium text-slate-500">
-                        Hours / Week
-                      </p>
-                    </div>
+                    <p className="text-xs font-medium text-slate-500">
+                      Hours / Week
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                {/* Career recommendations */}
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">
-                    Recommended Career Paths
-                  </h3>
+              {/* Career recommendations */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Recommended Career Paths
+                </h3>
 
-                  <div className="mt-4 space-y-5">
-                    {recommendation.recommendations?.map(
-                      (career: any, index: number) => (
-                        <div
-                          key={index}
-                          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                        >
+                <div className="mt-4 space-y-5">
+                  {recommendation.recommendations?.map(
+                    (career: any, index: number) => (
+                      <div
+                        key={index}
+                        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                      >
 
-                          {/* Career title + score */}
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        {/* Career title + score */}
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 
-                            <div className="flex items-start gap-4">
-                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
-                                <svg
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  className="h-6 w-6"
-                                >
-                                  <path
-                                    d="M4 20V10M10 20V4M16 20v-7M22 20H2"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                  />
-                                </svg>
-                              </div>
-
-                              <div>
-                                <h4 className="text-xl font-bold text-slate-900">
-                                  {career.career}
-                                </h4>
-
-                                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                                  {career.description}
-                                </p>
-                              </div>
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                className="h-6 w-6"
+                              >
+                                <path
+                                  d="M4 20V10M10 20V4M16 20v-7M22 20H2"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
                             </div>
 
-                            {/* Match score */}
-                            <div className="shrink-0 text-center">
-                              <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-orange-100 bg-orange-50">
-                                <span className="text-lg font-bold text-orange-600">
-                                  {career.matchScore}%
-                                </span>
-                              </div>
+                            <div>
+                              <h4 className="text-xl font-bold text-slate-900">
+                                {career.career}
+                              </h4>
 
-                              <p className="mt-1 text-xs font-medium text-slate-500">
-                                Match
+                              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                                {career.description}
                               </p>
                             </div>
                           </div>
 
-                          {/* Why recommended */}
-                          {career.whyRecommended?.length > 0 && (
-                            <div className="mt-6 border-t border-slate-100 pt-5">
-                              <h5 className="text-sm font-bold text-slate-900">
-                                Why this career?
-                              </h5>
-
-                              <div className="mt-3 space-y-2">
-                                {career.whyRecommended.map(
-                                  (reason: string, reasonIndex: number) => (
-                                    <div
-                                      key={reasonIndex}
-                                      className="flex items-start gap-2 text-sm text-slate-600"
-                                    >
-                                      <span className="mt-1 text-orange-500">
-                                        ✓
-                                      </span>
-
-                                      <span>{reason}</span>
-                                    </div>
-                                  )
-                                )}
-                              </div>
+                          {/* Match score */}
+                          <div className="shrink-0 text-center">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-orange-100 bg-orange-50">
+                              <span className="text-lg font-bold text-orange-600">
+                                {career.matchScore}%
+                              </span>
                             </div>
-                          )}
 
-                          {/* Strengths */}
-                          {career.strengthsUsed?.length > 0 && (
-                            <div className="mt-6">
-                              <h5 className="text-sm font-bold text-slate-900">
-                                Your Strengths
-                              </h5>
-
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {career.strengthsUsed.map(
-                                  (strength: string, strengthIndex: number) => (
-                                    <span
-                                      key={strengthIndex}
-                                      className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600"
-                                    >
-                                      {strength}
-                                    </span>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Missing skills */}
-                          {career.missingSkills?.length > 0 && (
-                            <div className="mt-6">
-                              <h5 className="text-sm font-bold text-slate-900">
-                                Skills to Develop
-                              </h5>
-
-                              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                {career.missingSkills.map(
-                                  (item: any, skillIndex: number) => (
-                                    <div
-                                      key={skillIndex}
-                                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
-                                    >
-                                      <span className="text-sm font-medium text-slate-700">
-                                        {item.skill}
-                                      </span>
-
-                                      <span
-                                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${priorityBadgeClasses(
-                                          item.priority
-                                        )}`}
-                                      >
-                                        {item.priority}
-                                      </span>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* View roadmap */}
-                          <div className="mt-6 border-t border-slate-100 pt-5">
-                            <button
-                              onClick={() => {
-                                setSelectedRecommendation(career);
-                                setRoadmapOpen(true);
-                              }}
-                              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                            >
-                              View Roadmap
-                            </button>
+                            <p className="mt-1 text-xs font-medium text-slate-500">
+                              Match
+                            </p>
                           </div>
-
                         </div>
-                      )
-                    )}
-                  </div>
-                </div>
 
+                        {/* Why recommended */}
+                        {career.whyRecommended?.length > 0 && (
+                          <div className="mt-6 border-t border-slate-100 pt-5">
+                            <h5 className="text-sm font-bold text-slate-900">
+                              Why this career?
+                            </h5>
+
+                            <div className="mt-3 space-y-2">
+                              {career.whyRecommended.map(
+                                (reason: string, reasonIndex: number) => (
+                                  <div
+                                    key={reasonIndex}
+                                    className="flex items-start gap-2 text-sm text-slate-600"
+                                  >
+                                    <span className="mt-1 text-orange-500">
+                                      ✓
+                                    </span>
+
+                                    <span>{reason}</span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Strengths */}
+                        {career.strengthsUsed?.length > 0 && (
+                          <div className="mt-6">
+                            <h5 className="text-sm font-bold text-slate-900">
+                              Your Strengths
+                            </h5>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {career.strengthsUsed.map(
+                                (strength: string, strengthIndex: number) => (
+                                  <span
+                                    key={strengthIndex}
+                                    className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600"
+                                  >
+                                    {strength}
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Missing skills */}
+                        {career.missingSkills?.length > 0 && (
+                          <div className="mt-6">
+                            <h5 className="text-sm font-bold text-slate-900">
+                              Skills to Develop
+                            </h5>
+
+                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                              {career.missingSkills.map(
+                                (item: any, skillIndex: number) => (
+                                  <div
+                                    key={skillIndex}
+                                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+                                  >
+                                    <span className="text-sm font-medium text-slate-700">
+                                      {item.skill}
+                                    </span>
+
+                                    <span
+                                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${priorityBadgeClasses(
+                                        item.priority
+                                      )}`}
+                                    >
+                                      {item.priority}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* View roadmap */}
+                        <div className="mt-6 border-t border-slate-100 pt-5">
+                          <button
+                            onClick={() => {
+                              setSelectedRecommendation(career);
+                              setRoadmapOpen(true);
+                            }}
+                            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                          >
+                            View Roadmap
+                          </button>
+                        </div>
+
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-            ) : (
+
+            </div>
+          ) : (
             <div className="mt-6 flex flex-col items-start">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -518,8 +585,8 @@ export default function Explorer() {
               {analyzingJob
                 ? "Analyzing..."
                 : jobAnalysis
-                ? "Re-analyze Job Description"
-                : "Analyze Job Description"}
+                  ? "Re-analyze Job Description"
+                  : "Analyze Job Description"}
             </button>
           </div>
 

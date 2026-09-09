@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePopup } from "../components/PopupProvider";
 
 export default function Login() {
+  const { showPopup } = usePopup();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -31,7 +33,7 @@ export default function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Login failed");
+        showPopup(data.message || "Login failed");
         return;
       }
 
@@ -39,7 +41,7 @@ export default function Login() {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      alert("Login successful!");
+      showPopup("Login successful!");
 
       if (data.user.profileCompleted) {
         router.push("/");
@@ -48,7 +50,7 @@ export default function Login() {
       }
     } catch (error) {
       console.error(error);
-      alert("Unable to connect to the server.");
+      showPopup("Unable to connect to the server.");
     }
   }
 

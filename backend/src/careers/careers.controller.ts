@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 import { SelectRoadmapDto } from './dto/select-roadmap.dto';
 
+import { UpdateRoadmapProgressDto } from './dto/update-roadmap-progress.dto';
 
 @Controller('careers')
 @UseGuards(JwtAuthGuard)
@@ -96,4 +97,30 @@ export class CareersController {
 
     }
 
+
+    // =====================================
+    // UPDATE ROADMAP PROGRESS
+    // =====================================
+
+    @Patch('roadmap-progress')
+    async updateRoadmapProgress(
+        @Request() req: any,
+
+        @Body()
+        updateRoadmapProgressDto:
+            UpdateRoadmapProgressDto,
+    ) {
+
+        return this.careersService
+            .updateRoadmapProgress(
+
+                req.user.userId,
+
+                updateRoadmapProgressDto.phaseIndex,
+
+                updateRoadmapProgressDto.completed,
+
+            );
+
+    }
 }

@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePopup } from "../components/PopupProvider";
 
 export default function Profile() {
-  const router = useRouter();
+  const { showPopup } = usePopup();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -186,12 +186,12 @@ export default function Profile() {
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
-      alert("Please sign in first.");
+      showPopup("Please sign in first.");
       return;
     }
 
     if (!github.trim()) {
-      alert("Please enter your GitHub username or URL.");
+      showPopup("Please enter your GitHub username or URL.");
       return;
     }
 
@@ -223,7 +223,7 @@ export default function Profile() {
 
       if (!response.ok) {
 
-        alert(
+        showPopup(
           data?.message ||
           "Failed to sync GitHub profile."
         );
@@ -251,7 +251,7 @@ export default function Profile() {
 
       }
 
-      alert("GitHub synced successfully!");
+      showPopup("GitHub synced successfully!");
 
     } catch (error) {
 
@@ -260,7 +260,7 @@ export default function Profile() {
         error
       );
 
-      alert("Unable to sync GitHub.");
+      showPopup("Unable to sync GitHub.");
 
     } finally {
 
@@ -274,12 +274,12 @@ export default function Profile() {
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
-      alert("Please sign in first.");
+      showPopup("Please sign in first.");
       return;
     }
 
     if (!resumeFile) {
-      alert("Please select a resume first.");
+      showPopup("Please select a resume first.");
       return;
     }
 
@@ -315,7 +315,7 @@ export default function Profile() {
 
       if (!response.ok) {
 
-        alert(
+        showPopup(
           data?.message ||
           "Failed to extract resume data."
         );
@@ -352,7 +352,7 @@ export default function Profile() {
 
       }
 
-      alert("Resume extracted successfully!");
+      showPopup("Resume extracted successfully!");
 
     } catch (error) {
 
@@ -361,7 +361,7 @@ export default function Profile() {
         error
       );
 
-      alert(
+      showPopup(
         "Unable to extract resume data."
       );
 
@@ -378,7 +378,7 @@ export default function Profile() {
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
-      alert("Please sign in first.");
+      showPopup("Please sign in first.");
       window.location.href = "/login";
       return;
     }
@@ -409,15 +409,14 @@ export default function Profile() {
       const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
-        alert(data?.message || "Failed to save profile");
+        showPopup(data?.message || "Failed to save profile");
         return;
       }
 
-      alert("Profile saved successfully!");
-      router.push("/explorer");
+      showPopup("Profile saved successfully!");
     } catch (error) {
       console.error("Profile save error:", error);
-      alert("Unable to connect to the server.");
+      showPopup("Unable to connect to the server.");
     } finally {
       setSaving(false);
     }
@@ -432,11 +431,11 @@ export default function Profile() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-50 pb-20">
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24">
 
       {/* Background glow */}
-      <div className="pointer-events-none absolute left-0 top-0 h-[500px] w-[500px] rounded-full bg-orange-100/50 blur-3xl" />
-      <div className="pointer-events-none absolute right-0 top-[600px] h-[550px] w-[550px] rounded-full bg-blue-100/50 blur-3xl" />
+      <div className="pointer-events-none absolute left-0 top-0 h-[560px] w-[560px] rounded-full bg-orange-200/40 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-[600px] h-[620px] w-[620px] rounded-full bg-blue-200/40 blur-3xl" />
 
       {/* Subtle dot grid */}
       <div
@@ -450,26 +449,129 @@ export default function Profile() {
         }}
       />
 
-      {/* Navbar */}
-      <nav className="relative z-10 border-b border-slate-100 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex h-[72px] max-w-5xl items-center justify-between px-6">
-          <Link href="/" className="text-xl font-black tracking-tight">
-            <span className="text-orange-500">CAREER</span>
-            <span className="text-blue-600">NAVIGATOR</span>
+      {/* ================= NAVBAR ================= */}
+      <nav className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">
+
+          <Link
+            href="/"
+            className="group flex items-center gap-3"
+          >
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-white shadow-lg shadow-orange-500/20 transition duration-300 group-hover:scale-105 group-hover:rotate-3">
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-5 w-5"
+              >
+
+                <path
+                  d="M4 17 10 11l4 4 6-8"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <path
+                  d="M16 7h4v4"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+              </svg>
+
+            </div>
+
+            <div>
+              <div className="text-lg font-black tracking-tight">
+                <span className="text-orange-500">CAREER</span>
+                <span className="ml-1 text-blue-600">NAVIGATOR</span>
+              </div>
+
+              <p className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:block">
+                Build your future
+              </p>
+            </div>
+
           </Link>
 
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-blue-600 text-sm font-bold text-white">
-            {name ? name.charAt(0).toUpperCase() : "?"}
+
+
+          {/* RIGHT SIDE */}
+          <div className="flex items-center gap-3">
+
+            {/* NAVIGATION */}
+            <div className="hidden items-center gap-1 sm:gap-2 md:flex">
+
+              {/* HOME */}
+              <Link
+                href="/"
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              >
+                Home
+              </Link>
+
+              <Link
+                href="/dashboard"
+                className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
+              >
+                Dashboard
+              </Link>
+
+
+              {/* CAREER EXPLORER */}
+              <Link
+                href="/explorer"
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              >
+                Career Explorer
+              </Link>
+
+
+              {/* MY ROADMAP */}
+              <Link
+                href="/my-roadmap"
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              >
+                My Roadmap
+              </Link>
+
+
+              {/* PROFILE - ACTIVE */}
+              <Link
+                href="/profile"
+                className="rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-600 transition-all duration-200 hover:bg-blue-100"
+              >
+                Profile
+              </Link>
+
+            </div>
+
+
+            {/* PROFILE AVATAR */}
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/20">
+              {name ? name.charAt(0).toUpperCase() : "?"}
+            </div>
+
           </div>
+
         </div>
       </nav>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6 pt-10">
+
+
+
+
+      <div className="relative z-10 mx-auto max-w-6xl px-5 pt-8 sm:px-6 sm:pt-12">
 
         {/* Profile header */}
-        <div className="mb-8 flex flex-col items-center gap-4 rounded-2xl border border-slate-200/80 bg-white/90 px-8 py-8 text-center shadow-[0_20px_60px_-15px_rgba(30,41,59,0.12)] backdrop-blur-sm sm:flex-row sm:text-left">
+        <div className="mb-8 flex flex-col items-center gap-5 overflow-hidden rounded-3xl border border-slate-200/70 bg-gradient-to-br from-white via-white to-orange-50/40 px-6 py-8 text-center shadow-[0_24px_70px_-20px_rgba(15,23,42,0.18)] backdrop-blur-xl sm:flex-row sm:px-9 sm:py-9 sm:text-left">
 
-          <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-blue-600 text-2xl font-bold text-white shadow-lg">
+          <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-2xl font-bold text-white shadow-xl shadow-orange-500/20">
             {name ? name.charAt(0).toUpperCase() : "?"}
 
             <button
@@ -500,11 +602,11 @@ export default function Profile() {
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
               {name || "Your Profile"}
             </h1>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-2 text-sm leading-6 text-slate-500">
               Complete your profile so we can build your personalized roadmap.
             </p>
           </div>
@@ -514,7 +616,7 @@ export default function Profile() {
     EXTRACTED SKILLS OVERVIEW
 ====================================== */}
 
-        <section className="mb-8 rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
+        <section className="mb-8 rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-[0_18px_50px_-22px_rgba(15,23,42,0.22)] backdrop-blur-xl transition-shadow duration-300 hover:shadow-[0_24px_60px_-24px_rgba(15,23,42,0.25)] sm:p-8">
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
@@ -522,7 +624,7 @@ export default function Profile() {
 
               <div className="flex items-center gap-3">
 
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-blue-600 text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-blue-600 text-white shadow-lg shadow-orange-500/15">
 
                   <svg
                     viewBox="0 0 24 24"
@@ -565,7 +667,7 @@ export default function Profile() {
             </div>
 
 
-            <div className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+            <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white px-5 py-2.5 text-sm font-bold text-blue-700 shadow-sm">
 
               {skills.length} Skills
 
@@ -584,7 +686,7 @@ export default function Profile() {
 
                 <span
                   key={skill}
-                  className="rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700"
+                  className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
                   {skill}
                 </span>
@@ -593,7 +695,7 @@ export default function Profile() {
 
             ) : (
 
-              <div className="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center">
+              <div className="w-full rounded-2xl border-2 border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white px-6 py-9 text-center">
 
                 <p className="font-medium text-slate-600">
                   No skills detected yet
@@ -611,10 +713,10 @@ export default function Profile() {
 
         </section>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
 
           {/* Personal Information */}
-          <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
+          <section className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-[0_18px_50px_-22px_rgba(15,23,42,0.22)] backdrop-blur-xl transition-shadow duration-300 hover:shadow-[0_24px_60px_-24px_rgba(15,23,42,0.25)] sm:p-8">
 
             <SectionHeading
               title="Personal Information"
@@ -631,7 +733,7 @@ export default function Profile() {
               }
             />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
 
               <Field label="Full Name *">
                 <input
@@ -670,7 +772,7 @@ export default function Profile() {
           </section>
 
           {/* Education */}
-          <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
+          <section className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-[0_18px_50px_-22px_rgba(15,23,42,0.22)] backdrop-blur-xl transition-shadow duration-300 hover:shadow-[0_24px_60px_-24px_rgba(15,23,42,0.25)] sm:p-8">
 
             <SectionHeading
               title="Education"
@@ -687,7 +789,7 @@ export default function Profile() {
               }
             />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
 
               <Field label="Education *">
                 <input
@@ -745,7 +847,7 @@ export default function Profile() {
 
 
           {/* Skills & Interests */}
-          <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
+          <section className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-[0_18px_50px_-22px_rgba(15,23,42,0.22)] backdrop-blur-xl transition-shadow duration-300 hover:shadow-[0_24px_60px_-24px_rgba(15,23,42,0.25)] sm:p-8">
 
             <SectionHeading
               title="Skills & Interests"
@@ -798,7 +900,7 @@ export default function Profile() {
                   type="button"
                   onClick={handleGithubSync}
                   disabled={syncingGithub}
-                  className="flex h-[52px] items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-[52px] items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white shadow-lg shadow-slate-900/15 transition duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
                 >
 
                   {syncingGithub ? (
@@ -847,12 +949,12 @@ export default function Profile() {
             {/* Skills */}
             <Field label="Skills" className="mt-5">
 
-              <div className="flex min-h-[52px] w-full flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 transition focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 hover:border-slate-400">
+              <div className="flex min-h-[56px] w-full flex-wrap items-center gap-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 shadow-sm transition focus-within:border-orange-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-orange-500/10 hover:border-slate-300 hover:bg-white">
 
                 {skills.map((skill) => (
                   <span
                     key={skill}
-                    className="flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700"
+                    className="flex items-center gap-1.5 rounded-xl border border-blue-100 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700"
                   >
                     {skill}
 
@@ -892,12 +994,12 @@ export default function Profile() {
             {/* Interests */}
             <Field label="Interests" className="mt-5">
 
-              <div className="flex min-h-[52px] w-full flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 transition focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 hover:border-slate-400">
+              <div className="flex min-h-[56px] w-full flex-wrap items-center gap-2.5 rounded-2xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 shadow-sm transition focus-within:border-orange-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-orange-500/10 hover:border-slate-300 hover:bg-white">
 
                 {interests.map((interest) => (
                   <span
                     key={interest}
-                    className="flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-sm font-medium text-orange-700"
+                    className="flex items-center gap-1.5 rounded-xl border border-orange-100 bg-orange-50 px-3 py-1.5 text-sm font-semibold text-orange-700"
                   >
                     {interest}
 
@@ -945,9 +1047,9 @@ export default function Profile() {
                 onDragLeave={() => setDragActive(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-8 text-center transition ${dragActive
-                  ? "border-orange-400 bg-orange-50"
-                  : "border-slate-300 bg-slate-50 hover:border-orange-300 hover:bg-orange-50/50"
+                className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center shadow-sm transition duration-200 hover:-translate-y-0.5 ${dragActive
+                  ? "border-orange-400 bg-orange-50 shadow-lg shadow-orange-500/10"
+                  : "border-slate-200 bg-slate-50/80 hover:border-orange-300 hover:bg-orange-50/60 hover:shadow-md"
                   }`}
               >
 
@@ -1002,7 +1104,7 @@ export default function Profile() {
                 type="button"
                 onClick={handleResumeExtraction}
                 disabled={!resumeFile || extractingResume}
-                className="flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-orange-500/20 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/25 disabled:cursor-not-allowed disabled:opacity-50"
               >
 
                 {extractingResume ? (
@@ -1034,7 +1136,7 @@ export default function Profile() {
           </section>
 
           {/* Job Description */}
-          <section className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-sm backdrop-blur-sm">
+          <section className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-[0_18px_50px_-22px_rgba(15,23,42,0.22)] backdrop-blur-xl transition-shadow duration-300 hover:shadow-[0_24px_60px_-24px_rgba(15,23,42,0.25)] sm:p-8">
 
             <SectionHeading
               title="Target Job Description"
@@ -1066,7 +1168,7 @@ We are looking for a Frontend Developer with experience in React, JavaScript, Ty
 
             </Field>
 
-            <div className="mt-3 flex items-start gap-2 rounded-xl bg-blue-50 p-4 text-sm text-blue-700">
+            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50/60 p-5 text-sm leading-6 text-blue-700">
 
               <svg
                 viewBox="0 0 24 24"
@@ -1092,39 +1194,64 @@ We are looking for a Frontend Developer with experience in React, JavaScript, Ty
 
           </section>
 
-          {/* Save bar */}
-          <div className="flex items-center justify-end gap-3 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-sm">
+          {/* Save and Career Explorer actions */}
+          <div className="sticky bottom-5 z-20 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-[0_18px_45px_-18px_rgba(15,23,42,0.28)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-5">
 
             <Link
-              href="/"
-              className="rounded-xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              href="/explorer"
+              className="group flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-6 py-3 text-sm font-bold text-blue-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-600 hover:text-white hover:shadow-md"
             >
-              Cancel
+              View Career Explorer
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-4 w-4 transition group-hover:translate-x-0.5"
+              >
+                <path
+                  d="M5 12h14M13 6l6 6-6 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </Link>
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="group flex items-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-orange-500/25 transition hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {saving ? "Saving..." : "Save Profile"}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/"
+                className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-center text-sm font-semibold text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md"
+              >
+                Cancel
+              </Link>
 
-              {!saving && (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="h-4 w-4 transition group-hover:translate-x-0.5"
-                >
-                  <path
-                    d="M5 12h14M13 6l6 6-6 6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </button>
+
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="group flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/30 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {saving ? "Saving..." : "Save Profile"}
+
+                {!saving && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="h-4 w-4 transition group-hover:translate-x-0.5"
+                  >
+                    <path
+                      d="M5 12h14M13 6l6 6-6 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
 
           </div>
 
@@ -1135,7 +1262,7 @@ We are looking for a Frontend Developer with experience in React, JavaScript, Ty
 }
 
 const inputClass =
-  "h-[52px] w-full rounded-xl border border-slate-300 bg-white px-4 text-[15px] text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500";
+  "h-[54px] w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 text-[15px] text-slate-800 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500";
 
 function Field({
   label,
@@ -1148,7 +1275,7 @@ function Field({
 }) {
   return (
     <div className={className}>
-      <label className="mb-1.5 block text-sm font-medium text-slate-700">
+      <label className="mb-2 block text-sm font-semibold text-slate-700">
         {label}
       </label>
       {children}
@@ -1171,10 +1298,10 @@ function SectionHeading({
   const text = color === "orange" ? "text-orange-500" : "text-blue-600";
 
   return (
-    <div className="mb-5 flex items-center gap-3">
+    <div className="mb-6 flex items-center gap-4 border-b border-slate-100 pb-5">
 
       <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${bg} ${text}`}
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${bg} ${text} shadow-sm`}
       >
         <svg
           viewBox="0 0 24 24"
@@ -1186,11 +1313,11 @@ function SectionHeading({
       </div>
 
       <div>
-        <h2 className="font-semibold text-slate-900">
+        <h2 className="text-base font-bold text-slate-900">
           {title}
         </h2>
 
-        <p className="text-xs text-slate-500">
+        <p className="mt-0.5 text-xs leading-5 text-slate-500">
           {subtitle}
         </p>
       </div>

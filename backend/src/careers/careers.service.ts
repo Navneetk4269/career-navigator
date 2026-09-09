@@ -20,6 +20,10 @@ import {
     ProfileDocument,
 } from '../profiles/schemas/profile.schema';
 
+import {
+    BadRequestException,
+} from '@nestjs/common';
+
 
 @Injectable()
 export class CareersService {
@@ -652,6 +656,9 @@ Return exactly this structure:
 
         career.selectedAt = new Date();
 
+        // ⭐ Reset phase progress when user selects a roadmap
+        career.roadmapProgress = [];
+
         await career.save();
 
         return {
@@ -668,30 +675,87 @@ Return exactly this structure:
 
     async getMyRoadmap(userId: string) {
 
-        const career =
-            await this.careerModel.findOne({
-                userId,
-            });
+        const career = await this.careerModel.findOne({
+            userId,
+        });
 
+
+        // User has no career data
         if (!career) {
-
-            throw new NotFoundException(
-                'Career recommendations not found.',
-            );
-
-        }
-
-        if (!career.selectedRoadmap) {
 
             return {
                 message: 'No roadmap selected yet.',
+
                 selectedRoadmap: null,
+
                 selectedAt: null,
+
+                roadmapProgress: [],
+
+                totalPhases: 0,
+
+                completedPhases: 0,
+
+                progressPercentage: 0,
             };
 
         }
 
+
+        // User has career data but has not selected a roadmap
+        if (!career.selectedRoadmap) {
+
+            return {
+                message: 'No roadmap selected yet.',
+
+                selectedRoadmap: null,
+
+                selectedAt: null,
+
+                roadmapProgress: [],
+
+                totalPhases: 0,
+
+                completedPhases: 0,
+
+                progressPercentage: 0,
+            };
+
+        }
+
+
+        // =====================================
+        // ROADMAP EXISTS → CALCULATE PROGRESS
+        // =====================================
+
+        const totalPhases =
+            career.selectedRoadmap.roadmap?.length || 0;
+
+
+        const completedPhases =
+            (career.roadmapProgress || []).filter(
+                (item) => item.completed,
+            ).length;
+
+
+        const progressPercentage =
+            totalPhases > 0
+                ? Math.round(
+                    (completedPhases / totalPhases) * 100,
+                )
+                : 0;
+
+        const roadmapCompleted =
+            totalPhases > 0 &&
+            completedPhases === totalPhases;
+
+
+        // =====================================
+        // RETURN SELECTED ROADMAP + PROGRESS
+        // =====================================
+
         return {
+
             message:
                 'Selected roadmap retrieved successfully.',
 
@@ -700,8 +764,317 @@ Return exactly this structure:
 
             selectedAt:
                 career.selectedAt,
+
+            roadmapProgress:
+                career.roadmapProgress || [],
+
+            totalPhases,
+
+            completedPhases,
+
+            progressPercentage,
+
+            roadmapCompleted,
+
         };
+
     }
+
+    // =====================================
+    // UPDATE ROADMAP PHASE PROGRESS
+    // =====================================
+
+    // =====================================
+    // UPDATE ROADMAP PHASE PROGRESS
+    // =====================================
+    // =====================================
+    // UPDATE ROADMAP PHASE PROGRESS
+    // =====================================
+
+    async updateRoadmapProgress(
+        userId: string,
+        phaseIndex: number,
+        completed: boolean,
+    ) {
+
+        // =====================================
+        // GET CAREER DATA
+        // =====================================
+
+        const career =
+            await this.careerModel.findOne({
+                userId,
+            });
+
+
+        if (!career) {
+
+            throw new NotFoundException(
+                'Career data not found.',
+            );
+
+        }
+
+
+        // =====================================
+        // CHECK SELECTED ROADMAP
+        // =====================================
+
+        if (!career.selectedRoadmap) {
+
+            throw new NotFoundException(
+                'No roadmap selected.',
+            );
+
+        }
+
+
+        // =====================================
+        // UPDATED PROFILE SKILLS
+        // =====================================
+
+        let updatedSkills: string[] = [];
+
+
+        // =====================================
+        // GET TOTAL ROADMAP PHASES
+        // =====================================
+
+        const totalPhases =
+            career.selectedRoadmap.roadmap?.length || 0;
+
+
+        // =====================================
+        // VALIDATE PHASE INDEX
+        // =====================================
+
+        if (
+            phaseIndex < 0 ||
+            phaseIndex >= totalPhases
+        ) {
+
+            throw new NotFoundException(
+                'Invalid roadmap phase.',
+            );
+
+        }
+
+
+        // =====================================
+        // CHECK EXISTING PROGRESS
+        // =====================================
+
+        const existingProgress =
+            career.roadmapProgress.find(
+                (item) =>
+                    item.phaseIndex === phaseIndex,
+            );
+
+
+        // =====================================
+        // PREVENT UNCHECKING COMPLETED PHASE
+        // =====================================
+
+        if (
+            existingProgress?.completed &&
+            completed === false
+        ) {
+
+            throw new BadRequestException(
+                'Completed phases cannot be unchecked.',
+            );
+
+        }
+
+
+        // =====================================
+        // FIND EXISTING PHASE PROGRESS
+        // =====================================
+
+        const existingProgressIndex =
+            career.roadmapProgress.findIndex(
+                (item) =>
+                    item.phaseIndex === phaseIndex,
+            );
+
+
+        const progressData = {
+
+            phaseIndex,
+
+            completed,
+
+            completedAt:
+                completed
+                    ? new Date()
+                    : null,
+
+        };
+
+
+        // =====================================
+        // UPDATE ROADMAP PROGRESS
+        // =====================================
+
+        if (existingProgressIndex >= 0) {
+
+            career.roadmapProgress[
+                existingProgressIndex
+            ] = progressData;
+
+        } else {
+
+            career.roadmapProgress.push(
+                progressData,
+            );
+
+        }
+
+
+        // =====================================
+        // ⭐ ADD COMPLETED PHASE SKILLS
+        // TO USER PROFILE
+        // =====================================
+
+        if (completed) {
+
+            // Get the roadmap phase that was completed
+            const completedPhase =
+                career.selectedRoadmap
+                    .roadmap[phaseIndex];
+
+
+            // Get skills from that phase
+            const newSkills =
+                completedPhase.skills || [];
+
+
+            // Get user's profile
+            const profile =
+                await this.profileModel.findOne({
+                    userId,
+                });
+
+
+            if (!profile) {
+
+                throw new NotFoundException(
+                    'Profile not found.',
+                );
+
+            }
+
+
+            // =====================================
+            // ADD NEW SKILLS TO EXISTING SKILLS
+            // REMOVE DUPLICATES
+            // =====================================
+
+            profile.skills = [
+
+                ...new Set([
+
+                    ...(profile.skills || []),
+
+                    ...newSkills,
+
+                ]),
+
+            ];
+
+
+            // Save updated profile
+            await profile.save();
+
+
+            // Store skills for API response
+            updatedSkills = profile.skills;
+
+        }
+
+
+        // =====================================
+        // SAVE ROADMAP PROGRESS
+        // =====================================
+
+        await career.save();
+
+
+        // =====================================
+        // CALCULATE COMPLETED PHASES
+        // =====================================
+
+        const completedPhases =
+            career.roadmapProgress.filter(
+                (item) => item.completed,
+            ).length;
+
+
+        // =====================================
+        // CALCULATE PROGRESS PERCENTAGE
+        // =====================================
+
+        const progressPercentage =
+            totalPhases > 0
+                ? Math.round(
+                    (completedPhases / totalPhases) * 100,
+                )
+                : 0;
+
+
+        // =====================================
+        // CHECK IF ROADMAP COMPLETED
+        // =====================================
+
+        const roadmapCompleted =
+
+            totalPhases > 0 &&
+
+            completedPhases === totalPhases;
+
+
+        // =====================================
+        // RETURN RESPONSE
+        // =====================================
+
+        return {
+
+            message:
+
+                roadmapCompleted
+
+                    ? `Congratulations! You have completed the ${career.selectedRoadmap.career} roadmap! 🎉`
+
+                    : 'Roadmap progress updated successfully.',
+
+
+            roadmapProgress:
+                career.roadmapProgress,
+
+
+            totalPhases,
+
+
+            completedPhases,
+
+
+            progressPercentage,
+
+
+            roadmapCompleted,
+
+
+            // ⭐ PROFILE SKILLS AFTER COMPLETING PHASE
+
+            updatedSkills,
+
+        };
+
+    }
+
+    // =====================================
+    // GET LATEST CAREER RECOMMENDATIONS
+    // =====================================
 
     // =====================================
     // GET LATEST CAREER RECOMMENDATIONS
@@ -716,6 +1089,7 @@ Return exactly this structure:
                 userId,
             });
 
+
         if (!career) {
 
             throw new NotFoundException(
@@ -724,13 +1098,17 @@ Return exactly this structure:
 
         }
 
+
         return {
+
             recommendations:
                 career.recommendations,
 
             generatedAt:
                 career.updatedAt,
+
         };
+
     }
 
 }
