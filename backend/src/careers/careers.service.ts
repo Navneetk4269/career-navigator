@@ -652,6 +652,9 @@ Return exactly this structure:
 
         career.selectedAt = new Date();
 
+        // ⭐ Reset phase progress when user selects a roadmap
+        career.roadmapProgress = [];
+
         await career.save();
 
         return {
@@ -668,30 +671,87 @@ Return exactly this structure:
 
     async getMyRoadmap(userId: string) {
 
-        const career =
-            await this.careerModel.findOne({
-                userId,
-            });
+        const career = await this.careerModel.findOne({
+            userId,
+        });
 
+
+        // User has no career data
         if (!career) {
-
-            throw new NotFoundException(
-                'Career recommendations not found.',
-            );
-
-        }
-
-        if (!career.selectedRoadmap) {
 
             return {
                 message: 'No roadmap selected yet.',
+
                 selectedRoadmap: null,
+
                 selectedAt: null,
+
+                roadmapProgress: [],
+
+                totalPhases: 0,
+
+                completedPhases: 0,
+
+                progressPercentage: 0,
             };
 
         }
 
+
+        // User has career data but has not selected a roadmap
+        if (!career.selectedRoadmap) {
+
+            return {
+                message: 'No roadmap selected yet.',
+
+                selectedRoadmap: null,
+
+                selectedAt: null,
+
+                roadmapProgress: [],
+
+                totalPhases: 0,
+
+                completedPhases: 0,
+
+                progressPercentage: 0,
+            };
+
+        }
+
+
+        // =====================================
+        // ROADMAP EXISTS → CALCULATE PROGRESS
+        // =====================================
+
+        const totalPhases =
+            career.selectedRoadmap.roadmap?.length || 0;
+
+
+        const completedPhases =
+            (career.roadmapProgress || []).filter(
+                (item) => item.completed,
+            ).length;
+
+
+        const progressPercentage =
+            totalPhases > 0
+                ? Math.round(
+                    (completedPhases / totalPhases) * 100,
+                )
+                : 0;
+
+        const roadmapCompleted =
+            totalPhases > 0 &&
+            completedPhases === totalPhases;
+
+
+        // =====================================
+        // RETURN SELECTED ROADMAP + PROGRESS
+        // =====================================
+
         return {
+
             message:
                 'Selected roadmap retrieved successfully.',
 
@@ -700,7 +760,151 @@ Return exactly this structure:
 
             selectedAt:
                 career.selectedAt,
+
+            roadmapProgress:
+                career.roadmapProgress || [],
+
+            totalPhases,
+
+            completedPhases,
+
+            progressPercentage,
+
+            roadmapCompleted,
+
         };
+
+    }
+
+    // =====================================
+    // UPDATE ROADMAP PHASE PROGRESS
+    // =====================================
+
+    async updateRoadmapProgress(
+        userId: string,
+        phaseIndex: number,
+        completed: boolean,
+    ) {
+
+        const career =
+            await this.careerModel.findOne({
+                userId,
+            });
+
+
+        if (!career) {
+
+            throw new NotFoundException(
+                'Career data not found.',
+            );
+
+        }
+
+
+        if (!career.selectedRoadmap) {
+
+            throw new NotFoundException(
+                'No roadmap selected.',
+            );
+
+        }
+
+
+        // Get total roadmap phases
+        const totalPhases =
+            career.selectedRoadmap.roadmap?.length || 0;
+
+
+        // Validate phase index
+        if (
+            phaseIndex < 0 ||
+            phaseIndex >= totalPhases
+        ) {
+
+            throw new NotFoundException(
+                'Invalid roadmap phase.',
+            );
+
+        }
+
+
+        // Find existing progress for this phase
+        const existingProgressIndex =
+            career.roadmapProgress.findIndex(
+                (item) =>
+                    item.phaseIndex === phaseIndex,
+            );
+
+
+        const progressData = {
+            phaseIndex,
+
+            completed,
+
+            completedAt:
+                completed
+                    ? new Date()
+                    : null,
+        };
+
+
+        if (existingProgressIndex >= 0) {
+
+            career.roadmapProgress[
+                existingProgressIndex
+            ] = progressData;
+
+        } else {
+
+            career.roadmapProgress.push(
+                progressData,
+            );
+
+        }
+
+
+        await career.save();
+
+
+        // Calculate completed phases
+        const completedPhases =
+            career.roadmapProgress.filter(
+                (item) => item.completed,
+            ).length;
+
+
+        // Calculate percentage
+        const progressPercentage =
+            totalPhases > 0
+                ? Math.round(
+                    (completedPhases / totalPhases) * 100,
+                )
+                : 0;
+
+        const roadmapCompleted =
+            totalPhases > 0 &&
+            completedPhases === totalPhases;
+
+        return {
+
+            message:
+                roadmapCompleted
+                    ? `Congratulations! You have completed the ${career.selectedRoadmap.career} roadmap! 🎉`
+                    : 'Roadmap progress updated successfully.',
+
+            roadmapProgress:
+                career.roadmapProgress,
+
+            totalPhases,
+
+            completedPhases,
+
+            progressPercentage,
+
+            roadmapCompleted,
+
+        };
+
     }
 
     // =====================================

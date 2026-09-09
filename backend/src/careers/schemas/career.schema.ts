@@ -72,7 +72,10 @@ export class Career {
     }[];
 
 
-    // ⭐ The roadmap currently selected by the user
+    // =====================================
+    // SELECTED ROADMAP
+    // =====================================
+
     @Prop({
         type: Object,
         default: null,
@@ -86,8 +89,39 @@ export class Career {
     })
     selectedAt!: Date | null;
 
-    // ⭐ Automatically managed by Mongoose
+
+    // =====================================
+    // ROADMAP PHASE PROGRESS ⭐ NEW
+    // =====================================
+
+    @Prop({
+        type: [
+            {
+                phaseIndex: Number,
+
+                completed: {
+                    type: Boolean,
+                    default: false,
+                },
+
+                completedAt: {
+                    type: Date,
+                    default: null,
+                },
+            },
+        ],
+        default: [],
+    })
+    roadmapProgress!: {
+        phaseIndex: number;
+        completed: boolean;
+        completedAt: Date | null;
+    }[];
+
+
+    // Automatically managed by Mongoose
     // because timestamps: true is enabled
+
     createdAt?: Date;
 
     updatedAt?: Date;
