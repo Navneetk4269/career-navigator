@@ -151,40 +151,100 @@ export default function Explorer() {
   return (
     <main className="min-h-screen bg-white">
 
-      {/* Navbar */}
-      <nav className="sticky top-0 z-20 border-b border-slate-100 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-6">
+      {/* ================= NAVBAR ================= */}
+      <nav className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">
 
-          <Link href="/" className="text-xl font-black tracking-tight">
-            <span className="text-orange-500">CAREER</span>
-            <span className="text-blue-600">NAVIGATOR</span>
+          <Link
+            href="/"
+            className="group flex items-center gap-3"
+          >
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-white shadow-lg shadow-orange-500/20 transition duration-300 group-hover:scale-105 group-hover:rotate-3">
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-5 w-5"
+              >
+
+                <path
+                  d="M4 17 10 11l4 4 6-8"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <path
+                  d="M16 7h4v4"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+              </svg>
+
+            </div>
+
+            <div>
+              <div className="text-lg font-black tracking-tight">
+                <span className="text-orange-500">CAREER</span>
+                <span className="ml-1 text-blue-600">NAVIGATOR</span>
+              </div>
+
+              <p className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:block">
+                Build your future
+              </p>
+            </div>
+
           </Link>
 
-          <div className="flex items-center gap-3">
+
+
+          {/* NAVIGATION LINKS */}
+          <div className="flex items-center gap-1 sm:gap-2">
+
+            {/* HOME */}
+            <Link
+              href="/"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 md:block"
+            >
+              Home
+            </Link>
+
+
+            {/* CAREER EXPLORER - ACTIVE */}
             <Link
               href="/explorer"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+              className="hidden rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-600 transition-all duration-200 hover:bg-blue-100 lg:block"
             >
               Career Explorer
             </Link>
 
+
+            {/* MY ROADMAP */}
+            <Link
+              href="/my-roadmap"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
+            >
+              My Roadmap
+            </Link>
+
+
+            {/* PROFILE */}
             <Link
               href="/profile"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 md:block"
             >
               Profile
             </Link>
 
-            <Link
-              href="/"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-            >
-              Home
-            </Link>
           </div>
+
         </div>
       </nav>
-
       {/* Page header */}
       <section className="relative overflow-hidden bg-slate-50">
 

@@ -449,47 +449,103 @@ export default function Profile() {
         }}
       />
 
-      {/* Navbar */}
-      <nav className="relative z-10 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between px-5 sm:px-6">
+      {/* ================= NAVBAR ================= */}
+      <nav className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">
 
-          {/* Logo - Left */}
           <Link
             href="/"
-            className="text-xl font-black tracking-tight transition hover:scale-[1.02]"
+            className="group flex items-center gap-3"
           >
-            <span className="text-orange-500">CAREER</span>
-            <span className="text-blue-600">NAVIGATOR</span>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-white shadow-lg shadow-orange-500/20 transition duration-300 group-hover:scale-105 group-hover:rotate-3">
+
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-5 w-5"
+              >
+
+                <path
+                  d="M4 17 10 11l4 4 6-8"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <path
+                  d="M16 7h4v4"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+              </svg>
+
+            </div>
+
+            <div>
+              <div className="text-lg font-black tracking-tight">
+                <span className="text-orange-500">CAREER</span>
+                <span className="ml-1 text-blue-600">NAVIGATOR</span>
+              </div>
+
+              <p className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:block">
+                Build your future
+              </p>
+            </div>
+
           </Link>
 
-          {/* Right Side */}
+
+
+          {/* RIGHT SIDE */}
           <div className="flex items-center gap-3">
 
-            {/* Navigation */}
-            <div className="hidden items-center gap-2 md:flex">
+            {/* NAVIGATION */}
+            <div className="hidden items-center gap-1 sm:gap-2 md:flex">
+
+              {/* HOME */}
               <Link
                 href="/"
-                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
               >
                 Home
               </Link>
 
+
+              {/* CAREER EXPLORER */}
               <Link
                 href="/explorer"
-                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
               >
                 Career Explorer
               </Link>
 
+
+              {/* MY ROADMAP */}
+              <Link
+                href="/my-roadmap"
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              >
+                My Roadmap
+              </Link>
+
+
+              {/* PROFILE - ACTIVE */}
               <Link
                 href="/profile"
-                className="rounded-xl bg-orange-50 px-4 py-2.5 text-sm font-bold text-orange-600 transition duration-200 hover:bg-orange-100"
+                className="rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-600 transition-all duration-200 hover:bg-blue-100"
               >
                 Profile
               </Link>
+
             </div>
 
-            {/* Profile Avatar */}
+
+            {/* PROFILE AVATAR */}
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/20">
               {name ? name.charAt(0).toUpperCase() : "?"}
             </div>
@@ -498,6 +554,11 @@ export default function Profile() {
 
         </div>
       </nav>
+
+
+
+
+
       <div className="relative z-10 mx-auto max-w-6xl px-5 pt-8 sm:px-6 sm:pt-12">
 
         {/* Profile header */}

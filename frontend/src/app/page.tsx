@@ -38,22 +38,22 @@ export default function Home() {
 
 
       {/* ================= NAVBAR ================= */}
-
-      <nav className="relative z-30 border-b border-slate-200/70 bg-white/75 backdrop-blur-xl">
-        <div className="mx-auto flex h-[78px] max-w-7xl items-center justify-between px-5 sm:px-6">
-
-          {/* LOGO */}
+      <nav className="relative z-30 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">
 
           <Link
             href="/"
             className="group flex items-center gap-3"
           >
+
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-white shadow-lg shadow-orange-500/20 transition duration-300 group-hover:scale-105 group-hover:rotate-3">
+
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 className="h-5 w-5"
               >
+
                 <path
                   d="M4 17 10 11l4 4 6-8"
                   stroke="currentColor"
@@ -69,125 +69,61 @@ export default function Home() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
+
               </svg>
+
             </div>
 
             <div>
               <div className="text-lg font-black tracking-tight">
-                <span className="text-orange-500">
-                  CAREER
-                </span>
-
-                <span className="ml-1 text-blue-600">
-                  NAVIGATOR
-                </span>
+                <span className="text-orange-500">CAREER</span>
+                <span className="ml-1 text-blue-600">NAVIGATOR</span>
               </div>
 
               <p className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:block">
                 Build your future
               </p>
             </div>
+
           </Link>
 
 
           {/* NAVIGATION */}
-
           <div className="flex items-center gap-1 sm:gap-2">
+
+            {/* HOME - ACTIVE */}
+            <Link
+              href="/"
+              className="hidden rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-600 transition-all duration-200 hover:bg-blue-100 md:block"
+            >
+              Home
+            </Link>
 
             <Link
               href="/explorer"
-              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
             >
               Career Explorer
             </Link>
 
+            <Link
+              href="/my-roadmap"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
+            >
+              My Roadmap
+            </Link>
 
             <Link
               href="/profile"
-              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition duration-200 hover:bg-slate-100 hover:text-slate-900 md:block"
+              className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 md:block"
             >
               Profile
             </Link>
 
-
-            {/* NOT LOGGED IN */}
-
-            {!isLoggedIn ? (
-              <>
-                <Link
-                  href="/login"
-                  className="rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition duration-200 hover:bg-slate-100 hover:text-slate-900 sm:px-4"
-                >
-                  Sign In
-                </Link>
-
-
-                <Link
-                  href="/signup"
-                  className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/30 sm:px-5"
-                >
-                  <span>Get Started</span>
-
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="hidden h-4 w-4 transition group-hover:translate-x-0.5 sm:block"
-                  >
-                    <path
-                      d="M5 12h14M13 6l6 6-6 6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </Link>
-              </>
-            ) : (
-              /* LOGGED IN - LOGOUT BUTTON */
-              <button
-                onClick={handleLogout}
-                className="group flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-500 hover:text-white hover:shadow-md"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="h-4 w-4"
-                >
-                  <path
-                    d="M10 17l5-5-5-5"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-
-                  <path
-                    d="M15 12H3"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-
-                  <path
-                    d="M21 19V5a2 2 0 0 0-2-2h-6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-
-                <span>
-                  Logout
-                </span>
-              </button>
-            )}
-
           </div>
+
         </div>
       </nav>
-
-
       {/* ================= HERO ================= */}
 
       <section className="relative z-10 overflow-hidden">

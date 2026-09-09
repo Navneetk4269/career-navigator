@@ -20,6 +20,10 @@ import {
     ProfileDocument,
 } from '../profiles/schemas/profile.schema';
 
+import {
+    BadRequestException,
+} from '@nestjs/common';
+
 
 @Injectable()
 export class CareersService {
@@ -809,6 +813,23 @@ Return exactly this structure:
 
         }
 
+
+        const existingProgress =
+            career.roadmapProgress.find(
+                (item) =>
+                    item.phaseIndex === phaseIndex,
+            );
+
+        if (
+            existingProgress?.completed &&
+            completed === false
+        ) {
+
+            throw new BadRequestException(
+                'Completed phases cannot be unchecked.',
+            );
+
+        }
 
         // Get total roadmap phases
         const totalPhases =
