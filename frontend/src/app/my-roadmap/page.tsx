@@ -299,22 +299,14 @@ export default function MyRoadmapPage() {
                                 Home
                             </Link>
 
-                            {/* Dashboard */}
+                            {/* DASHBOARD */}
 
                             <Link
                                 href="/dashboard"
-                                className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
+                                className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 lg:block"
                             >
                                 Dashboard
                             </Link>
-
-                            <Link
-                                href="/dashboard"
-                                className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
-                            >
-                                Dashboard
-                            </Link>
-
 
                             <Link
                                 href="/explorer"
@@ -448,6 +440,15 @@ export default function MyRoadmapPage() {
                                 className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 md:block"
                             >
                                 Home
+                            </Link>
+
+                            {/* DASHBOARD */}
+
+                            <Link
+                                href="/dashboard"
+                                className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 lg:block"
+                            >
+                                Dashboard
                             </Link>
 
                             <Link
@@ -616,6 +617,14 @@ export default function MyRoadmapPage() {
                             Home
                         </Link>
 
+                        {/* DASHBOARD */}
+
+                        <Link
+                            href="/dashboard"
+                            className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 lg:block"
+                        >
+                            Dashboard
+                        </Link>
 
                         {/* CAREER EXPLORER */}
 
