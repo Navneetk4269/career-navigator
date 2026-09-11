@@ -275,7 +275,7 @@ export default function Dashboard() {
 
           <h1 className="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
             Welcome back
-            {user?.name ? `, ${user.name}` : ""} 👋
+            {user?.name ? `, ${user.name}` : ""}
           </h1>
 
           <p className="mt-3 text-base leading-7 text-slate-500">
