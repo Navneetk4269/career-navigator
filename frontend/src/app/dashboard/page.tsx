@@ -240,7 +240,7 @@ export default function Dashboard() {
             </Link>
 
             <Link
-              href="/roadmap"
+              href="/my-roadmap"
               className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 lg:block"
             >
               My Roadmap
@@ -566,15 +566,14 @@ export default function Dashboard() {
                       </p>
 
                       <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                          gap.priority === "CRITICAL"
-                            ? "bg-red-50 text-red-600"
-                            : gap.priority === "HIGH"
+                        className={`rounded-full px-2.5 py-1 text-xs font-bold ${gap.priority === "CRITICAL"
+                          ? "bg-red-50 text-red-600"
+                          : gap.priority === "HIGH"
                             ? "bg-orange-50 text-orange-600"
                             : gap.priority === "MEDIUM"
-                            ? "bg-yellow-50 text-yellow-700"
-                            : "bg-blue-50 text-blue-600"
-                        }`}
+                              ? "bg-yellow-50 text-yellow-700"
+                              : "bg-blue-50 text-blue-600"
+                          }`}
                       >
                         {gap.priority}
                       </span>
@@ -649,11 +648,10 @@ export default function Dashboard() {
                     return (
                       <div
                         key={index}
-                        className={`rounded-xl border p-5 ${
-                          isSelected
-                            ? "border-orange-200 bg-orange-50/40"
-                            : "border-slate-100"
-                        }`}
+                        className={`rounded-xl border p-5 ${isSelected
+                          ? "border-orange-200 bg-orange-50/40"
+                          : "border-slate-100"
+                          }`}
                       >
 
                         <div className="flex items-center justify-between gap-4">
