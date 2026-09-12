@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { JobAnalysisModule } from './job-analysis/job-analysis.module';
 import { CareersModule } from './careers/careers.module';
+import { MarketDemandModule } from './market-demand/market-demand.module';
 
 @Module({
   imports: [
@@ -33,6 +34,9 @@ import { CareersModule } from './careers/careers.module';
 
     CareersModule,
 
+    MarketDemandModule,
+
   ],
+  controllers: [],
 })
 export class AppModule { }
