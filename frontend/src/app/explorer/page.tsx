@@ -12,12 +12,17 @@ export default function Explorer() {
   const [jobAnalysis, setJobAnalysis] = useState<any>(null);
   const [analyzingJob, setAnalyzingJob] = useState(false);
 
+  const [marketDemand, setMarketDemand] = useState<any>(null);
+  const [generatingMarketDemand, setGeneratingMarketDemand] = useState(false);
+  const [selectedMarketCareer, setSelectedMarketCareer] = useState<any>(null);
+
   const [selectedRecommendation, setSelectedRecommendation] =
     useState<any>(null);
   const [roadmapOpen, setRoadmapOpen] = useState(false);
 
   useEffect(() => {
     loadRecommendation();
+    loadMarketDemand();
   }, []);
 
   async function loadRecommendation() {
@@ -86,6 +91,86 @@ export default function Explorer() {
       alert("Unable to generate recommendations.");
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function generateMarketDemand() {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+
+    setGeneratingMarketDemand(true);
+
+    try {
+        const response = await fetch(
+            "http://localhost:5000/market-demand/generate",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : null;
+
+        if (!response.ok) {
+            alert(
+                data?.message ||
+                    "Failed to generate market demand."
+            );
+            return;
+        }
+
+        setMarketDemand(data.marketDemand);
+    } catch (error) {
+        console.error(
+            "Market demand error:",
+            error
+        );
+
+        alert(
+            "Unable to generate market demand."
+        );
+    } finally {
+        setGeneratingMarketDemand(false);
+    }
+  }
+
+  async function loadMarketDemand() {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            "http://localhost:5000/market-demand/latest",
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : null;
+
+        if (response.ok) {
+            setMarketDemand(
+                data.marketDemand
+            );
+        }
+    } catch (error) {
+        console.error(
+            "Failed to load market demand:",
+            error
+        );
     }
   }
 
@@ -545,6 +630,164 @@ export default function Explorer() {
           )}
         </div>
       </section>
+
+      <section className="mx-auto max-w-6xl px-6 pb-16">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+
+            {/* HEADER */}
+
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                <div>
+                    <h2 className="text-xl font-bold text-slate-900">
+                        Market Demand
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                        Explore careers that are currently in demand
+                        and see how your skills compare.
+                    </p>
+                </div>
+
+                <button
+                    onClick={generateMarketDemand}
+                    disabled={generatingMarketDemand}
+                    className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    {generatingMarketDemand
+                        ? "Analyzing..."
+                        : marketDemand
+                        ? "Refresh Market Demand"
+                        : "Explore Market Demand"}
+                </button>
+
+            </div>
+
+            {/* CAREERS */}
+
+            {marketDemand?.careers?.length > 0 ? (
+
+                <div className="mt-6 space-y-4">
+
+                    {marketDemand.careers.map(
+                        (career: any, index: number) => (
+
+                            <div
+                                key={index}
+                                className="rounded-xl border border-slate-200 bg-white p-5 transition hover:shadow-md"
+                            >
+
+                                {/* CAREER HEADER */}
+
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                                    <div>
+
+                                        <div className="flex items-center gap-3">
+
+                                            <span className="text-lg">
+                                                {index === 0
+                                                    ? "🏆"
+                                                    : "💼"}
+                                            </span>
+
+                                            <h3 className="text-lg font-bold text-slate-900">
+                                                {career.career}
+                                            </h3>
+
+                                        </div>
+
+                                        <p className="mt-2 text-sm text-slate-500">
+                                            {career.description}
+                                        </p>
+
+                                    </div>
+
+
+                                    {/* DEMAND SCORE */}
+
+                                    <div className="shrink-0">
+
+                                        <div className="flex items-center gap-3">
+
+                                            <div className="h-3 w-32 overflow-hidden rounded-full bg-slate-100">
+
+                                                <div
+                                                    className="h-full rounded-full bg-blue-600"
+                                                    style={{
+                                                        width: `${career.demandScore}%`,
+                                                    }}
+                                                />
+
+                                            </div>
+
+                                            <span className="text-sm font-bold text-slate-900">
+                                                {career.demandScore}%
+                                            </span>
+
+                                        </div>
+
+                                        <p className="mt-1 text-xs text-slate-500">
+                                            Demand
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                {/* GROWTH */}
+
+                                <div className="mt-4 flex items-center justify-between">
+
+                                    <div className="text-sm">
+
+                                        <span className="font-semibold text-green-600">
+                                            ↑ {career.growthPercentage}%
+                                        </span>
+
+                                        <span className="ml-2 text-slate-500">
+                                            • {career.trend}
+                                        </span>
+
+                                    </div>
+
+
+                                    <button
+                                        onClick={() =>
+                                            setSelectedMarketCareer(
+                                                career
+                                            )
+                                        }
+                                        className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                                    >
+                                        View Details →
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        )
+                    )}
+
+                </div>
+
+            ) : (
+
+                <div className="mt-6 rounded-xl bg-slate-50 p-8 text-center">
+
+                    <p className="text-sm text-slate-500">
+                        Generate a market demand analysis
+                        to see current career trends.
+                    </p>
+
+                </div>
+
+            )}
+
+        </div>
+    </section>
 
       {/* Job Description Analysis card */}
       <section className="mx-auto max-w-6xl px-6 pb-16">
