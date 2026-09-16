@@ -312,12 +312,12 @@ function CareerRoadmapModal({
 
                           <span
                             className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${priority === "CRITICAL"
-                                ? "bg-red-50 text-red-600"
-                                : priority === "HIGH"
-                                  ? "bg-orange-50 text-orange-600"
-                                  : priority === "MEDIUM"
-                                    ? "bg-blue-50 text-blue-600"
-                                    : "bg-slate-100 text-slate-600"
+                              ? "bg-red-50 text-red-600"
+                              : priority === "HIGH"
+                                ? "bg-orange-50 text-orange-600"
+                                : priority === "MEDIUM"
+                                  ? "bg-blue-50 text-blue-600"
+                                  : "bg-slate-100 text-slate-600"
                               }`}
                           >
                             {priority}
@@ -466,10 +466,10 @@ function CareerRoadmapModal({
           {selectMessage && (
             <p
               className={`mb-3 text-center text-sm font-bold ${selectMessage
-                  .toLowerCase()
-                  .includes("success")
-                  ? "text-green-600"
-                  : "text-red-600"
+                .toLowerCase()
+                .includes("success")
+                ? "text-green-600"
+                : "text-red-600"
                 }`}
             >
               {selectMessage}
@@ -499,6 +499,9 @@ export default function Explorer() {
 
   const [jobAnalysis, setJobAnalysis] = useState<any>(null);
   const [analyzingJob, setAnalyzingJob] = useState(false);
+  const [selectingJobRoadmap, setSelectingJobRoadmap] = useState(false);
+  const [jobRoadmapMessage, setJobRoadmapMessage] = useState('');
+  const [jobRoadmapMessageSuccess, setJobRoadmapMessageSuccess] = useState(true);
 
   const [marketDemand, setMarketDemand] = useState<any>(null);
   const [generatingMarketDemand, setGeneratingMarketDemand] = useState(false);
@@ -511,7 +514,49 @@ export default function Explorer() {
   useEffect(() => {
     loadRecommendation();
     loadMarketDemand();
+    loadSavedJobAnalysis();
   }, []);
+
+  function getJobAnalysisStorageKey() {
+    const storedUser = localStorage.getItem("user");
+
+    try {
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      const userId =
+        user?.id ||
+        user?._id ||
+        user?.userId ||
+        user?.email ||
+        "current";
+
+      return `careerNavigator_jobAnalysis_${userId}`;
+    } catch {
+      return "careerNavigator_jobAnalysis_current";
+    }
+  }
+
+  function loadSavedJobAnalysis() {
+    try {
+      const saved = localStorage.getItem(
+        getJobAnalysisStorageKey()
+      );
+
+      if (!saved) {
+        return;
+      }
+
+      const parsed = JSON.parse(saved);
+
+      if (parsed) {
+        setJobAnalysis(parsed);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load saved job analysis:",
+        error
+      );
+    }
+  }
 
   async function loadRecommendation() {
     const token = localStorage.getItem("accessToken");
@@ -692,11 +737,175 @@ export default function Explorer() {
       }
 
       setJobAnalysis(data.analysis);
+
+      // Keep showing the latest analysis after refresh/navigation.
+      // A new analysis replaces this saved result.
+      try {
+        localStorage.setItem(
+          getJobAnalysisStorageKey(),
+          JSON.stringify(data.analysis)
+        );
+      } catch (storageError) {
+        console.error(
+          "Failed to save job analysis locally:",
+          storageError
+        );
+      }
     } catch (error) {
       console.error("Job analysis error:", error);
       alert("Unable to analyze the job description.");
     } finally {
       setAnalyzingJob(false);
+    }
+  }
+
+  async function selectJobAnalysisRoadmap() {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const roadmap = Array.isArray(jobAnalysis?.generalRoadmap)
+      ? jobAnalysis.generalRoadmap
+      : [];
+
+    if (!jobAnalysis || roadmap.length === 0) {
+      setJobRoadmapMessageSuccess(false);
+      setJobRoadmapMessage(
+        "No job-analysis roadmap is available to select."
+      );
+      return;
+    }
+
+    setSelectingJobRoadmap(true);
+    setJobRoadmapMessage('');
+
+    try {
+      /*
+       * The careers/select-roadmap endpoint expects the same
+       * recommendation structure used by CareerRoadmapModal.
+       * Here we convert the Job Description Analysis result
+       * into that structure before sending it to the backend.
+       */
+      const payload = {
+        recommendation: {
+          career:
+            jobAnalysis.jobTitle ||
+            jobAnalysis.career ||
+            "Job Description Career",
+
+          matchScore: Number(jobAnalysis.matchScore || 0),
+
+          description:
+            jobAnalysis.description ||
+            `Personalized roadmap for ${jobAnalysis.jobTitle || "this job"
+            } based on your Job Description Analysis.`,
+
+          whyRecommended: Array.isArray(jobAnalysis.explanations)
+            ? jobAnalysis.explanations
+            : [],
+
+          strengthsUsed: Array.isArray(jobAnalysis.strengths)
+            ? jobAnalysis.strengths
+            : [],
+
+          missingSkills: Array.isArray(jobAnalysis.missingSkills)
+            ? jobAnalysis.missingSkills.map((item: any) => ({
+              skill:
+                typeof item === "string"
+                  ? item
+                  : item?.skill || "",
+              priority:
+                typeof item === "object"
+                  ? item?.priority || "MEDIUM"
+                  : "MEDIUM",
+              priorityScore:
+                typeof item === "object"
+                  ? Number(item?.priorityScore || 0)
+                  : 0,
+              reason:
+                typeof item === "object"
+                  ? item?.reason || ""
+                  : "",
+            }))
+            : [],
+
+          roadmap: roadmap.map((phase: any) => ({
+            phase: phase?.phase || "",
+            skills: Array.isArray(phase?.skills)
+              ? phase.skills
+              : [],
+            description: phase?.description || "",
+            estimatedDuration:
+              phase?.estimatedDuration || "",
+            weeklyHours: Number(phase?.weeklyHours || 0),
+            tasks: Array.isArray(phase?.tasks)
+              ? phase.tasks
+              : [],
+          })),
+        },
+      };
+
+      console.log(
+        "Selecting Job Analysis roadmap:",
+        payload
+      );
+
+      const response = await fetch(
+        "http://localhost:5000/careers/select-roadmap",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const text = await response.text();
+      let data: any = null;
+
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = {
+          message: text || "Unexpected server response.",
+        };
+      }
+
+      if (!response.ok) {
+        const message = Array.isArray(data?.message)
+          ? data.message.join(", ")
+          : data?.message ||
+          "Failed to select the Job Analysis roadmap.";
+
+        throw new Error(message);
+      }
+
+      setJobRoadmapMessageSuccess(true);
+      setJobRoadmapMessage(
+        "Roadmap selected successfully! You can now track it from My Roadmap."
+      );
+
+      // Refresh recommendation data so the selected roadmap is reflected
+      // wherever the Explorer uses career roadmap information.
+      await loadRecommendation();
+    } catch (error: any) {
+      console.error(
+        "Job Analysis roadmap selection error:",
+        error
+      );
+
+      setJobRoadmapMessageSuccess(false);
+      setJobRoadmapMessage(
+        error?.message ||
+        "Unable to select the Job Analysis roadmap."
+      );
+    } finally {
+      setSelectingJobRoadmap(false);
     }
   }
 
@@ -1510,6 +1719,61 @@ export default function Explorer() {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* SELECT JOB ANALYSIS ROADMAP */}
+              {jobAnalysis.generalRoadmap?.length > 0 && (
+                <div className="border-t border-slate-100 pt-8">
+                  {/* Selection message - shown directly above the button */}
+                  {jobRoadmapMessage && (
+                    <div className="mb-4 flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-500 text-white">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          className="h-5 w-5"
+                        >
+                          <path
+                            d="m5 12 4 4L19 6"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
+
+                      <p className="flex-1 text-sm font-bold text-green-800">
+                        {jobRoadmapMessage}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => setJobRoadmapMessage("")}
+                        className="shrink-0 text-xl leading-none text-slate-400 transition hover:text-slate-600"
+                        aria-label="Close message"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={selectJobAnalysisRoadmap}
+                    disabled={selectingJobRoadmap}
+                    className="w-full rounded-2xl bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600 px-6 py-4 text-sm font-black text-white shadow-xl shadow-orange-500/20 transition hover:-translate-y-0.5 hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {selectingJobRoadmap
+                      ? "Selecting Roadmap..."
+                      : "Select This Roadmap →"}
+                  </button>
+
+                  <p className="mt-3 text-center text-xs text-slate-400">
+                    This will save the Job Description Analysis roadmap to your
+                    selected roadmap.
+                  </p>
                 </div>
               )}
             </div>
