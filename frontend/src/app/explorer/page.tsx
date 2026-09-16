@@ -2,7 +2,495 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import RoadmapModal from "../components/RoadmapModal";
+import MarketCareerDetailsModal from "../components/MarketCareerDetailsModal";
+
+
+type CareerRoadmapModalProps = {
+  recommendation: any;
+  isOpen: boolean;
+  onClose: () => void;
+  onSelected?: () => void | Promise<void>;
+};
+
+function CareerRoadmapModal({
+  recommendation,
+  isOpen,
+  onClose,
+  onSelected,
+}: CareerRoadmapModalProps) {
+  const [selecting, setSelecting] = useState(false);
+  const [selectMessage, setSelectMessage] = useState("");
+
+  if (!isOpen || !recommendation) {
+    return null;
+  }
+
+  const roadmap = Array.isArray(recommendation.roadmap)
+    ? recommendation.roadmap
+    : [];
+
+  const missingSkills = Array.isArray(recommendation.missingSkills)
+    ? recommendation.missingSkills
+    : [];
+
+  const selectRoadmap = async () => {
+    if (!roadmap.length || selecting) {
+      return;
+    }
+
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    setSelecting(true);
+    setSelectMessage("");
+
+    try {
+      /*
+       * The backend SelectRoadmapDto expects:
+       *
+       * {
+       *   recommendation: { ... }
+       * }
+       *
+       * Do NOT send the recommendation object directly.
+       */
+      const payload = {
+        recommendation: {
+          career: recommendation.career || "",
+          matchScore: Number(recommendation.matchScore || 0),
+          description: recommendation.description || "",
+          whyRecommended: Array.isArray(recommendation.whyRecommended)
+            ? recommendation.whyRecommended
+            : [],
+          strengthsUsed: Array.isArray(recommendation.strengthsUsed)
+            ? recommendation.strengthsUsed
+            : [],
+          missingSkills: missingSkills.map((item: any) => ({
+            skill:
+              typeof item === "string"
+                ? item
+                : item?.skill || "",
+            priority:
+              typeof item === "object"
+                ? item?.priority || "MEDIUM"
+                : "MEDIUM",
+            priorityScore:
+              typeof item === "object"
+                ? Number(item?.priorityScore || 0)
+                : 0,
+            reason:
+              typeof item === "object"
+                ? item?.reason || ""
+                : "",
+          })),
+          roadmap: roadmap.map((phase: any) => ({
+            phase: phase?.phase || "",
+            skills: Array.isArray(phase?.skills)
+              ? phase.skills
+              : [],
+            description: phase?.description || "",
+            estimatedDuration:
+              phase?.estimatedDuration || "",
+            weeklyHours: Number(
+              phase?.weeklyHours || 0
+            ),
+            tasks: Array.isArray(phase?.tasks)
+              ? phase.tasks
+              : [],
+          })),
+        },
+      };
+
+      console.log(
+        "Selecting career roadmap:",
+        payload
+      );
+
+      const response = await fetch(
+        "http://localhost:5000/careers/select-roadmap",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const text = await response.text();
+
+      let data: any = null;
+
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = {
+          message: text || "Unexpected server response.",
+        };
+      }
+
+      if (!response.ok) {
+        const message = Array.isArray(data?.message)
+          ? data.message.join(", ")
+          : data?.message ||
+          "Failed to select this roadmap.";
+
+        throw new Error(message);
+      }
+
+      console.log(
+        "Roadmap selected successfully:",
+        data
+      );
+
+      setSelectMessage(
+        "Roadmap selected successfully!"
+      );
+
+      /*
+       * Give the user a moment to see the success message,
+       * then refresh the Explorer state and close the modal.
+       */
+      if (onSelected) {
+        await onSelected();
+      }
+
+      setTimeout(() => {
+        onClose();
+      }, 500);
+    } catch (error: any) {
+      console.error(
+        "Career roadmap selection error:",
+        error
+      );
+
+      setSelectMessage(
+        error?.message ||
+        "Unable to select this roadmap."
+      );
+    } finally {
+      setSelecting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+        {/* HEADER */}
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 bg-white px-6 py-5 sm:px-8">
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">
+              Personalized Career Roadmap
+            </p>
+
+            <h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
+              {recommendation.career}
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              A learning path based on your current skills
+              and the skills you need to develop.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl font-bold text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+            aria-label="Close roadmap"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* BODY */}
+        <div className="min-h-0 overflow-y-auto px-6 py-6 sm:px-8">
+          {/* MATCH */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-orange-100 bg-orange-50 p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Match Score
+              </p>
+
+              <p className="mt-2 text-3xl font-black text-orange-600">
+                {recommendation.matchScore || 0}%
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 sm:col-span-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Roadmap
+              </p>
+
+              <p className="mt-2 text-lg font-bold text-slate-900">
+                {roadmap.length} learning phases
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Complete each phase to build the missing
+                skills for this career.
+              </p>
+            </div>
+          </div>
+
+          {/* DESCRIPTION */}
+          {recommendation.description && (
+            <section className="mt-7">
+              <h3 className="text-lg font-bold text-slate-900">
+                Career Overview
+              </h3>
+
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                {recommendation.description}
+              </p>
+            </section>
+          )}
+
+          {/* STRENGTHS */}
+          {recommendation.strengthsUsed?.length > 0 && (
+            <section className="mt-7">
+              <h3 className="text-lg font-bold text-slate-900">
+                Your Existing Strengths
+              </h3>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {recommendation.strengthsUsed.map(
+                  (skill: string, index: number) => (
+                    <span
+                      key={index}
+                      className="rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700"
+                    >
+                      ✓ {skill}
+                    </span>
+                  )
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* MISSING SKILLS */}
+          {missingSkills.length > 0 && (
+            <section className="mt-7">
+              <h3 className="text-lg font-bold text-slate-900">
+                Skills You Need to Develop
+              </h3>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {missingSkills.map(
+                  (item: any, index: number) => {
+                    const skill =
+                      typeof item === "string"
+                        ? item
+                        : item?.skill || "";
+
+                    const priority =
+                      typeof item === "object"
+                        ? item?.priority || "MEDIUM"
+                        : "MEDIUM";
+
+                    return (
+                      <div
+                        key={index}
+                        className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-semibold text-slate-800">
+                            {skill}
+                          </span>
+
+                          <span
+                            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${priority === "CRITICAL"
+                                ? "bg-red-50 text-red-600"
+                                : priority === "HIGH"
+                                  ? "bg-orange-50 text-orange-600"
+                                  : priority === "MEDIUM"
+                                    ? "bg-blue-50 text-blue-600"
+                                    : "bg-slate-100 text-slate-600"
+                              }`}
+                          >
+                            {priority}
+                          </span>
+                        </div>
+
+                        {typeof item === "object" &&
+                          item?.reason && (
+                            <p className="mt-2 text-xs leading-5 text-slate-500">
+                              {item.reason}
+                            </p>
+                          )}
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ROADMAP */}
+          <section className="mt-8 border-t border-slate-100 pt-7">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Learning Roadmap
+                </h3>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Focus on the skills you are currently missing.
+                </p>
+              </div>
+
+              <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-600">
+                {roadmap.length} phases
+              </span>
+            </div>
+
+            {roadmap.length > 0 ? (
+              <div className="mt-6 space-y-5">
+                {roadmap.map(
+                  (phase: any, index: number) => (
+                    <div
+                      key={index}
+                      className="relative rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white shadow-sm">
+                          {index + 1}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <h4 className="text-lg font-bold text-slate-900">
+                              {phase?.phase ||
+                                `Phase ${index + 1}`}
+                            </h4>
+
+                            <div className="flex flex-wrap gap-2">
+                              {phase?.estimatedDuration && (
+                                <span className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
+                                  ⏱ {phase.estimatedDuration}
+                                </span>
+                              )}
+
+                              {phase?.weeklyHours && (
+                                <span className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
+                                  📚 {phase.weeklyHours} hrs/week
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {phase?.description && (
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                              {phase.description}
+                            </p>
+                          )}
+
+                          {phase?.skills?.length > 0 && (
+                            <div className="mt-4">
+                              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                                Skills
+                              </p>
+
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {phase.skills.map(
+                                  (
+                                    skill: string,
+                                    skillIndex: number
+                                  ) => (
+                                    <span
+                                      key={skillIndex}
+                                      className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600"
+                                    >
+                                      {skill}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {phase?.tasks?.length > 0 && (
+                            <div className="mt-4">
+                              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                                Tasks
+                              </p>
+
+                              <ul className="mt-2 space-y-2">
+                                {phase.tasks.map(
+                                  (
+                                    task: string,
+                                    taskIndex: number
+                                  ) => (
+                                    <li
+                                      key={taskIndex}
+                                      className="flex items-start gap-2 text-sm text-slate-600"
+                                    >
+                                      <span className="mt-1 font-bold text-blue-600">
+                                        •
+                                      </span>
+                                      <span>{task}</span>
+                                    </li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="mt-5 rounded-xl bg-slate-50 p-5 text-sm text-slate-500">
+                No roadmap phases are available for this recommendation.
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* FOOTER */}
+        <div className="shrink-0 border-t border-slate-200 bg-white px-6 py-5 sm:px-8">
+          {selectMessage && (
+            <p
+              className={`mb-3 text-center text-sm font-bold ${selectMessage
+                  .toLowerCase()
+                  .includes("success")
+                  ? "text-green-600"
+                  : "text-red-600"
+                }`}
+            >
+              {selectMessage}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={selectRoadmap}
+            disabled={selecting || roadmap.length === 0}
+            className="w-full rounded-2xl bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600 px-6 py-4 text-sm font-black text-white shadow-xl shadow-orange-500/20 transition hover:-translate-y-0.5 hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {selecting
+              ? "Selecting Roadmap..."
+              : "Select This Roadmap →"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Explorer() {
   const [recommendation, setRecommendation] = useState<any>(null);
@@ -98,46 +586,46 @@ export default function Explorer() {
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
-        window.location.href = "/login";
-        return;
+      window.location.href = "/login";
+      return;
     }
 
     setGeneratingMarketDemand(true);
 
     try {
-        const response = await fetch(
-            "http://localhost:5000/market-demand/generate",
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-
-        const text = await response.text();
-        const data = text ? JSON.parse(text) : null;
-
-        if (!response.ok) {
-            alert(
-                data?.message ||
-                    "Failed to generate market demand."
-            );
-            return;
+      const response = await fetch(
+        "http://localhost:5000/market-demand/generate",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        setMarketDemand(data.marketDemand);
-    } catch (error) {
-        console.error(
-            "Market demand error:",
-            error
-        );
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : null;
 
+      if (!response.ok) {
         alert(
-            "Unable to generate market demand."
+          data?.message ||
+          "Failed to generate market demand."
         );
+        return;
+      }
+
+      setMarketDemand(data.marketDemand);
+    } catch (error) {
+      console.error(
+        "Market demand error:",
+        error
+      );
+
+      alert(
+        "Unable to generate market demand."
+      );
     } finally {
-        setGeneratingMarketDemand(false);
+      setGeneratingMarketDemand(false);
     }
   }
 
@@ -145,32 +633,32 @@ export default function Explorer() {
     const token = localStorage.getItem("accessToken");
 
     if (!token) {
-        return;
+      return;
     }
 
     try {
-        const response = await fetch(
-            "http://localhost:5000/market-demand/latest",
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-
-        const text = await response.text();
-        const data = text ? JSON.parse(text) : null;
-
-        if (response.ok) {
-            setMarketDemand(
-                data.marketDemand
-            );
+      const response = await fetch(
+        "http://localhost:5000/market-demand/latest",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-    } catch (error) {
-        console.error(
-            "Failed to load market demand:",
-            error
+      );
+
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : null;
+
+      if (response.ok) {
+        setMarketDemand(
+          data.marketDemand
         );
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load market demand:",
+        error
+      );
     }
   }
 
@@ -634,160 +1122,160 @@ export default function Explorer() {
       <section className="mx-auto max-w-6xl px-6 pb-16">
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 
-            {/* HEADER */}
+          {/* HEADER */}
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-                <div>
-                    <h2 className="text-xl font-bold text-slate-900">
-                        Market Demand
-                    </h2>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Market Demand
+              </h2>
 
-                    <p className="mt-1 text-sm text-slate-500">
-                        Explore careers that are currently in demand
-                        and see how your skills compare.
-                    </p>
-                </div>
+              <p className="mt-1 text-sm text-slate-500">
+                Explore careers that are currently in demand
+                and see how your skills compare.
+              </p>
+            </div>
 
-                <button
-                    onClick={generateMarketDemand}
-                    disabled={generatingMarketDemand}
-                    className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                    {generatingMarketDemand
-                        ? "Analyzing..."
-                        : marketDemand
-                        ? "Refresh Market Demand"
-                        : "Explore Market Demand"}
-                </button>
+            <button
+              onClick={generateMarketDemand}
+              disabled={generatingMarketDemand}
+              className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {generatingMarketDemand
+                ? "Analyzing..."
+                : marketDemand
+                  ? "Refresh Market Demand"
+                  : "Explore Market Demand"}
+            </button>
+
+          </div>
+
+          {/* CAREERS */}
+
+          {marketDemand?.careers?.length > 0 ? (
+
+            <div className="mt-6 space-y-4">
+
+              {marketDemand.careers.map(
+                (career: any, index: number) => (
+
+                  <div
+                    key={index}
+                    className="rounded-xl border border-slate-200 bg-white p-5 transition hover:shadow-md"
+                  >
+
+                    {/* CAREER HEADER */}
+
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                      <div>
+
+                        <div className="flex items-center gap-3">
+
+                          <span className="text-lg">
+                            {index === 0
+                              ? "🏆"
+                              : "💼"}
+                          </span>
+
+                          <h3 className="text-lg font-bold text-slate-900">
+                            {career.career}
+                          </h3>
+
+                        </div>
+
+                        <p className="mt-2 text-sm text-slate-500">
+                          {career.description}
+                        </p>
+
+                      </div>
+
+
+                      {/* DEMAND SCORE */}
+
+                      <div className="shrink-0">
+
+                        <div className="flex items-center gap-3">
+
+                          <div className="h-3 w-32 overflow-hidden rounded-full bg-slate-100">
+
+                            <div
+                              className="h-full rounded-full bg-blue-600"
+                              style={{
+                                width: `${career.demandScore}%`,
+                              }}
+                            />
+
+                          </div>
+
+                          <span className="text-sm font-bold text-slate-900">
+                            {career.demandScore}%
+                          </span>
+
+                        </div>
+
+                        <p className="mt-1 text-xs text-slate-500">
+                          Demand
+                        </p>
+
+                      </div>
+
+                    </div>
+
+
+                    {/* GROWTH */}
+
+                    <div className="mt-4 flex items-center justify-between">
+
+                      <div className="text-sm">
+
+                        <span className="font-semibold text-green-600">
+                          ↑ {career.growthPercentage}%
+                        </span>
+
+                        <span className="ml-2 text-slate-500">
+                          • {career.trend}
+                        </span>
+
+                      </div>
+
+
+                      <button
+                        onClick={() =>
+                          setSelectedMarketCareer(
+                            career
+                          )
+                        }
+                        className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                      >
+                        View Details →
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                )
+              )}
 
             </div>
 
-            {/* CAREERS */}
+          ) : (
 
-            {marketDemand?.careers?.length > 0 ? (
+            <div className="mt-6 rounded-xl bg-slate-50 p-8 text-center">
 
-                <div className="mt-6 space-y-4">
+              <p className="text-sm text-slate-500">
+                Generate a market demand analysis
+                to see current career trends.
+              </p>
 
-                    {marketDemand.careers.map(
-                        (career: any, index: number) => (
+            </div>
 
-                            <div
-                                key={index}
-                                className="rounded-xl border border-slate-200 bg-white p-5 transition hover:shadow-md"
-                            >
-
-                                {/* CAREER HEADER */}
-
-                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
-                                    <div>
-
-                                        <div className="flex items-center gap-3">
-
-                                            <span className="text-lg">
-                                                {index === 0
-                                                    ? "🏆"
-                                                    : "💼"}
-                                            </span>
-
-                                            <h3 className="text-lg font-bold text-slate-900">
-                                                {career.career}
-                                            </h3>
-
-                                        </div>
-
-                                        <p className="mt-2 text-sm text-slate-500">
-                                            {career.description}
-                                        </p>
-
-                                    </div>
-
-
-                                    {/* DEMAND SCORE */}
-
-                                    <div className="shrink-0">
-
-                                        <div className="flex items-center gap-3">
-
-                                            <div className="h-3 w-32 overflow-hidden rounded-full bg-slate-100">
-
-                                                <div
-                                                    className="h-full rounded-full bg-blue-600"
-                                                    style={{
-                                                        width: `${career.demandScore}%`,
-                                                    }}
-                                                />
-
-                                            </div>
-
-                                            <span className="text-sm font-bold text-slate-900">
-                                                {career.demandScore}%
-                                            </span>
-
-                                        </div>
-
-                                        <p className="mt-1 text-xs text-slate-500">
-                                            Demand
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-
-                                {/* GROWTH */}
-
-                                <div className="mt-4 flex items-center justify-between">
-
-                                    <div className="text-sm">
-
-                                        <span className="font-semibold text-green-600">
-                                            ↑ {career.growthPercentage}%
-                                        </span>
-
-                                        <span className="ml-2 text-slate-500">
-                                            • {career.trend}
-                                        </span>
-
-                                    </div>
-
-
-                                    <button
-                                        onClick={() =>
-                                            setSelectedMarketCareer(
-                                                career
-                                            )
-                                        }
-                                        className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-                                    >
-                                        View Details →
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                        )
-                    )}
-
-                </div>
-
-            ) : (
-
-                <div className="mt-6 rounded-xl bg-slate-50 p-8 text-center">
-
-                    <p className="text-sm text-slate-500">
-                        Generate a market demand analysis
-                        to see current career trends.
-                    </p>
-
-                </div>
-
-            )}
+          )}
 
         </div>
-    </section>
+      </section>
 
       {/* Job Description Analysis card */}
       <section className="mx-auto max-w-6xl px-6 pb-16">
@@ -1048,12 +1536,22 @@ export default function Explorer() {
         </div>
       </section>
 
-      <RoadmapModal
+      <CareerRoadmapModal
         recommendation={selectedRecommendation}
         isOpen={roadmapOpen}
         onClose={() => {
           setRoadmapOpen(false);
           setSelectedRecommendation(null);
+        }}
+        onSelected={async () => {
+          await loadRecommendation();
+        }}
+      />
+      <MarketCareerDetailsModal
+        career={selectedMarketCareer}
+        isOpen={!!selectedMarketCareer}
+        onClose={() => {
+          setSelectedMarketCareer(null);
         }}
       />
     </main>
