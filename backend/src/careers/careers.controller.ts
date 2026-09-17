@@ -5,8 +5,14 @@ import {
     Patch,
     Post,
     Request,
+    UploadedFile,
     UseGuards,
+    UseInterceptors,
+    BadRequestException,
+    ParseFilePipeBuilder,
 } from '@nestjs/common';
+
+import { FileInterceptor } from '@nestjs/platform-express';
 
 import { CareersService } from './careers.service';
 
@@ -95,6 +101,59 @@ export class CareersController {
                 req.user.userId,
             );
 
+    }
+
+
+    // =====================================
+    // SUBMIT ROADMAP COMPLETION EVIDENCE
+    // =====================================
+
+    @Post('roadmap-proof')
+    @UseInterceptors(
+        FileInterceptor('file', {
+            dest: './uploads/roadmap-proof',
+        }),
+    )
+    async submitRoadmapProof(
+        @Request() req: any,
+
+        @UploadedFile(
+            new ParseFilePipeBuilder()
+                .addFileTypeValidator({
+                    fileType: /^image\/(jpeg|png)$|^application\/pdf$/,
+                })
+                .addMaxSizeValidator({
+                    maxSize: 10 * 1024 * 1024,
+                })
+                .build({
+                    errorHttpStatusCode: 400,
+                }),
+        )
+        file: Express.Multer.File,
+
+        @Body()
+        body: {
+            phaseIndex: string;
+            evidenceType: 'certificate' | 'screenshot';
+        },
+    ) {
+        const phaseIndex = Number(body.phaseIndex);
+
+        if (Number.isNaN(phaseIndex)) {
+            throw new BadRequestException('Invalid roadmap phase.');
+        }
+
+        if (!file) {
+            throw new BadRequestException('Evidence file is required.');
+        }
+
+        return this.careersService.initializePhaseVerification(
+            req.user.userId,
+            phaseIndex,
+            body.evidenceType,
+            file.originalname,
+            file.path,
+        );
     }
 
 
