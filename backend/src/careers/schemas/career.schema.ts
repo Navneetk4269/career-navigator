@@ -94,10 +94,17 @@ export class Career {
     // ROADMAP PHASE PROGRESS ⭐ NEW
     // =====================================
 
+    // =====================================
+// ROADMAP PHASE PROGRESS
+// =====================================
+
     @Prop({
         type: [
             {
-                phaseIndex: Number,
+                phaseIndex: {
+                    type: Number,
+                    required: true,
+                },
 
                 completed: {
                     type: Boolean,
@@ -108,14 +115,80 @@ export class Career {
                     type: Date,
                     default: null,
                 },
+
+                // =====================================
+                // COMPLETION VERIFICATION
+                // =====================================
+
+                verificationStatus: {
+                    type: String,
+                    enum: [
+                        'not_submitted',
+                        'pending',
+                        'verified',
+                        'rejected',
+                    ],
+                    default: 'not_submitted',
+                },
+
+                evidenceType: {
+                    type: String,
+                    enum: [
+                        'certificate',
+                        'screenshot',
+                    ],
+                    default: null,
+                },
+
+                evidenceFileName: {
+                    type: String,
+                    default: null,
+                },
+
+                evidenceFilePath: {
+                    type: String,
+                    default: null,
+                },
+
+                verificationResult: {
+                    type: Object,
+                    default: null,
+                },
             },
         ],
         default: [],
     })
     roadmapProgress!: {
         phaseIndex: number;
+
         completed: boolean;
+
         completedAt: Date | null;
+
+        verificationStatus:
+            | 'not_submitted'
+            | 'pending'
+            | 'verified'
+            | 'rejected';
+
+        evidenceType:
+            | 'certificate'
+            | 'screenshot'
+            | null;
+
+        evidenceFileName: string | null;
+        
+        evidenceFilePath: string | null;
+
+        verificationResult: {
+            confidence?: number;
+            learnerName?: string;
+            courseName?: string;
+            platform?: string;
+            completionStatus?: string;
+            relevantSkills?: string[];
+            reason?: string;
+        } | null;
     }[];
 
 

@@ -2,6 +2,7 @@ import {
     Injectable,
     InternalServerErrorException,
     NotFoundException,
+    BadRequestException,
 } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/mongoose';
@@ -20,9 +21,7 @@ import {
     ProfileDocument,
 } from '../profiles/schemas/profile.schema';
 
-import {
-    BadRequestException,
-} from '@nestjs/common';
+import * as path from 'path';
 
 
 @Injectable()
@@ -780,88 +779,53 @@ Return exactly this structure:
 
     }
 
-    // =====================================
-    // UPDATE ROADMAP PHASE PROGRESS
-    // =====================================
 
     // =====================================
-    // UPDATE ROADMAP PHASE PROGRESS
-    // =====================================
-    // =====================================
-    // UPDATE ROADMAP PHASE PROGRESS
+    // INITIALIZE + VERIFY PHASE EVIDENCE
     // =====================================
 
-    async updateRoadmapProgress(
+    async initializePhaseVerification(
         userId: string,
         phaseIndex: number,
-        completed: boolean,
+        evidenceType: 'certificate' | 'screenshot',
+        evidenceFileName: string,
+        evidenceFilePath: string,
     ) {
-
-        // =====================================
-        // GET CAREER DATA
-        // =====================================
-
         const career =
             await this.careerModel.findOne({
                 userId,
             });
 
-
         if (!career) {
-
             throw new NotFoundException(
                 'Career data not found.',
             );
-
         }
 
-
-        // =====================================
-        // CHECK SELECTED ROADMAP
-        // =====================================
-
         if (!career.selectedRoadmap) {
-
             throw new NotFoundException(
                 'No roadmap selected.',
             );
-
         }
-
-
-        // =====================================
-        // UPDATED PROFILE SKILLS
-        // =====================================
-
-        let updatedSkills: string[] = [];
-
-
-        // =====================================
-        // GET TOTAL ROADMAP PHASES
-        // =====================================
 
         const totalPhases =
             career.selectedRoadmap.roadmap?.length || 0;
 
-
         // =====================================
-        // VALIDATE PHASE INDEX
+        // VALIDATE PHASE
         // =====================================
 
         if (
             phaseIndex < 0 ||
             phaseIndex >= totalPhases
         ) {
-
-            throw new NotFoundException(
+            throw new BadRequestException(
                 'Invalid roadmap phase.',
             );
-
         }
 
-
         // =====================================
-        // CHECK EXISTING PROGRESS
+        // GET EXISTING PROGRESS
         // =====================================
 
         const existingProgress =
@@ -870,51 +834,54 @@ Return exactly this structure:
                     item.phaseIndex === phaseIndex,
             );
 
-
-        // =====================================
-        // PREVENT UNCHECKING COMPLETED PHASE
-        // =====================================
-
-        if (
-            existingProgress?.completed &&
-            completed === false
-        ) {
-
+        if (existingProgress?.completed) {
             throw new BadRequestException(
-                'Completed phases cannot be unchecked.',
+                'This roadmap phase has already been verified and completed.',
             );
-
         }
 
+        // =====================================
+        // GET ROADMAP PHASE
+        // =====================================
+
+        const roadmapPhase =
+            career.selectedRoadmap
+                .roadmap[phaseIndex];
+
+        if (!roadmapPhase) {
+            throw new BadRequestException(
+                'Roadmap phase not found.',
+            );
+        }
 
         // =====================================
-        // FIND EXISTING PHASE PROGRESS
+        // SAVE EVIDENCE AS PENDING
         // =====================================
+
+        const progressData = {
+            phaseIndex,
+
+            completed: false,
+
+            completedAt: null,
+
+            verificationStatus:
+                'pending' as const,
+
+            evidenceType,
+
+            evidenceFileName,
+
+            evidenceFilePath,
+
+            verificationResult: null,
+        };
 
         const existingProgressIndex =
             career.roadmapProgress.findIndex(
                 (item) =>
                     item.phaseIndex === phaseIndex,
             );
-
-
-        const progressData = {
-
-            phaseIndex,
-
-            completed,
-
-            completedAt:
-                completed
-                    ? new Date()
-                    : null,
-
-        };
-
-
-        // =====================================
-        // UPDATE ROADMAP PROGRESS
-        // =====================================
 
         if (existingProgressIndex >= 0) {
 
@@ -930,151 +897,696 @@ Return exactly this structure:
 
         }
 
+        await career.save();
 
         // =====================================
-        // ⭐ ADD COMPLETED PHASE SKILLS
-        // TO USER PROFILE
+        // VERIFY WITH GEMINI
         // =====================================
 
-        if (completed) {
+        try {
 
-            // Get the roadmap phase that was completed
-            const completedPhase =
-                career.selectedRoadmap
-                    .roadmap[phaseIndex];
-
-
-            // Get skills from that phase
-            const newSkills =
-                completedPhase.skills || [];
-
-
-            // Get user's profile
-            const profile =
-                await this.profileModel.findOne({
+            const verificationResult =
+                await this.verifyRoadmapEvidence(
                     userId,
-                });
-
-
-            if (!profile) {
-
-                throw new NotFoundException(
-                    'Profile not found.',
+                    roadmapPhase,
+                    evidenceType,
+                    evidenceFileName,
+                    evidenceFilePath,
                 );
 
+            // =====================================
+            // FIND PROGRESS AGAIN
+            // =====================================
+
+            const progressIndex =
+                career.roadmapProgress.findIndex(
+                    (item) =>
+                        item.phaseIndex === phaseIndex,
+                );
+
+            if (progressIndex === -1) {
+                throw new Error(
+                    'Roadmap progress entry not found.',
+                );
             }
 
-
             // =====================================
-            // ADD NEW SKILLS TO EXISTING SKILLS
-            // REMOVE DUPLICATES
+            // VERIFIED
             // =====================================
 
-            profile.skills = [
+            if (
+                verificationResult.verified
+            ) {
 
-                ...new Set([
+                career.roadmapProgress[
+                    progressIndex
+                ] = {
+                    phaseIndex,
 
-                    ...(profile.skills || []),
+                    completed: true,
 
-                    ...newSkills,
+                    completedAt:
+                        new Date(),
 
-                ]),
+                    verificationStatus:
+                        'verified',
 
-            ];
+                    evidenceType,
+
+                    evidenceFileName,
+
+                    evidenceFilePath,
+
+                    verificationResult: {
+                        confidence:
+                            verificationResult.confidence,
+
+                        learnerName:
+                            verificationResult.learnerName,
+
+                        courseName:
+                            verificationResult.courseName,
+
+                        platform:
+                            verificationResult.platform,
+
+                        completionStatus:
+                            verificationResult.completionStatus,
+
+                        relevantSkills:
+                            verificationResult.relevantSkills,
+
+                        reason:
+                            verificationResult.reason,
+                    },
+                };
+
+                // =====================================
+                // ADD VERIFIED PHASE SKILLS
+                // TO USER PROFILE
+                // =====================================
+
+                const profile =
+                    await this.profileModel.findOne({
+                        userId,
+                    });
+
+                if (!profile) {
+                    throw new NotFoundException(
+                        'Profile not found.',
+                    );
+                }
+
+                const phaseSkills =
+                    roadmapPhase.skills || [];
+
+                profile.skills = [
+                    ...new Set([
+                        ...(profile.skills || []),
+                        ...phaseSkills,
+                    ]),
+                ];
+
+                await profile.save();
+
+                await career.save();
+
+                // =====================================
+                // CALCULATE PROGRESS
+                // =====================================
+
+                const completedPhases =
+                    career.roadmapProgress.filter(
+                        (item) =>
+                            item.completed,
+                    ).length;
+
+                const progressPercentage =
+                    totalPhases > 0
+                        ? Math.round(
+                            (completedPhases /
+                                totalPhases) *
+                            100,
+                        )
+                        : 0;
+
+                const roadmapCompleted =
+                    totalPhases > 0 &&
+                    completedPhases ===
+                    totalPhases;
+
+                return {
+                    message:
+                        roadmapCompleted
+                            ? 'Evidence verified. Congratulations! You have completed the roadmap! 🎉'
+                            : 'Evidence verified successfully. The next roadmap phase is now unlocked.',
+
+                    phaseIndex,
+
+                    verificationStatus:
+                        'verified',
+
+                    completed: true,
+
+                    verificationResult,
+
+                    completedPhases,
+
+                    totalPhases,
+
+                    progressPercentage,
+
+                    roadmapCompleted,
+
+                    updatedSkills:
+                        profile.skills,
+                };
+            }
+
+            // =====================================
+            // REJECTED
+            // =====================================
+
+            career.roadmapProgress[
+                progressIndex
+            ] = {
+                phaseIndex,
+
+                completed: false,
+
+                completedAt: null,
+
+                verificationStatus:
+                    'rejected',
+
+                evidenceType,
+
+                evidenceFileName,
+
+                evidenceFilePath,
+
+                verificationResult: {
+                    confidence:
+                        verificationResult.confidence,
+
+                    learnerName:
+                        verificationResult.learnerName,
+
+                    courseName:
+                        verificationResult.courseName,
+
+                    platform:
+                        verificationResult.platform,
+
+                    completionStatus:
+                        verificationResult.completionStatus,
+
+                    relevantSkills:
+                        verificationResult.relevantSkills,
+
+                    reason:
+                        verificationResult.reason,
+                },
+            };
+
+            await career.save();
+
+            return {
+                message:
+                    'The submitted evidence could not be verified. Please submit better evidence.',
+
+                phaseIndex,
+
+                verificationStatus:
+                    'rejected',
+
+                completed: false,
+
+                verificationResult,
+            };
+
+        } catch (error: any) {
+
+            console.error(
+                'Roadmap Evidence Verification Error:',
+                error,
+            );
+
+            // Keep evidence pending if Gemini itself failed.
+            const progressIndex =
+                career.roadmapProgress.findIndex(
+                    (item) =>
+                        item.phaseIndex === phaseIndex,
+                );
+
+            if (progressIndex >= 0) {
+
+                career.roadmapProgress[
+                    progressIndex
+                ] = {
+                    phaseIndex,
+
+                    completed: false,
+
+                    completedAt: null,
+
+                    verificationStatus:
+                        'pending',
+
+                    evidenceType,
+
+                    evidenceFileName,
+
+                    evidenceFilePath,
+
+                    verificationResult: {
+                        reason:
+                            'Evidence was uploaded, but automatic verification could not be completed. Please try again.',
+                    },
+                };
+
+                await career.save();
+            }
+
+            throw new InternalServerErrorException(
+                'Evidence was uploaded, but verification could not be completed. Please try again.',
+            );
+        }
+    }
 
 
-            // Save updated profile
-            await profile.save();
+    // =====================================
+    // VERIFY ROADMAP EVIDENCE WITH GEMINI
+    // =====================================
 
+    private async verifyRoadmapEvidence(
+        userId: string,
+        roadmapPhase: any,
+        evidenceType:
+            | 'certificate'
+            | 'screenshot',
+        evidenceFileName: string,
+        evidenceFilePath: string,
+    ) {
+        // =====================================
+        // GET USER PROFILE
+        // =====================================
 
-            // Store skills for API response
-            updatedSkills = profile.skills;
+        const profile =
+            await this.profileModel.findOne({
+                userId,
+            });
+
+        if (!profile) {
+            throw new NotFoundException(
+                'Profile not found.',
+            );
+        }
+
+        // =====================================
+        // CHECK FILE
+        // =====================================
+
+        const absoluteFilePath =
+            path.resolve(evidenceFilePath);
+
+        // =====================================
+        // DETERMINE MIME TYPE
+        // =====================================
+
+        const extension =
+            path.extname(
+                evidenceFileName,
+            ).toLowerCase();
+
+        let mimeType = '';
+
+        if (extension === '.pdf') {
+            mimeType =
+                'application/pdf';
+        } else if (
+            extension === '.jpg' ||
+            extension === '.jpeg'
+        ) {
+            mimeType =
+                'image/jpeg';
+        } else if (
+            extension === '.png'
+        ) {
+            mimeType =
+                'image/png';
+        } else {
+            throw new BadRequestException(
+                'Unsupported evidence file type.',
+            );
+        }
+
+        // =====================================
+        // UPLOAD FILE TO GEMINI
+        // =====================================
+
+        const uploadedFile =
+            await this.gemini.files.upload({
+                file: absoluteFilePath,
+                config: {
+                    mimeType,
+                },
+            });
+
+        if (
+            !uploadedFile.uri ||
+            !uploadedFile.mimeType
+        ) {
+            throw new Error(
+                'Gemini file upload failed.',
+            );
+        }
+
+        // =====================================
+        // CREATE VERIFICATION PROMPT
+        // =====================================
+
+        const prompt = `
+
+You are an evidence verification system
+for a learning roadmap.
+
+Your job is to determine whether the uploaded
+certificate or screenshot provides reasonable
+evidence that the learner completed the requested
+roadmap phase.
+
+IMPORTANT:
+
+You are NOT determining whether the document is
+legally authentic.
+
+You are only determining whether the visible
+information provides sufficient evidence of
+completion.
+
+The evidence may be a certificate or screenshot.
+
+=================================
+LEARNER INFORMATION
+=================================
+
+Learner name:
+${profile.bio || 'Not provided'}
+
+=================================
+ROADMAP PHASE
+=================================
+
+Phase:
+${roadmapPhase.phase || 'Not provided'}
+
+Required skills:
+${JSON.stringify(
+            roadmapPhase.skills || [],
+            null,
+            2,
+        )}
+
+Phase description:
+${roadmapPhase.description || 'Not provided'}
+
+Learning tasks:
+${JSON.stringify(
+            roadmapPhase.tasks || [],
+            null,
+            2,
+        )}
+
+=================================
+EVIDENCE INFORMATION
+=================================
+
+Evidence type:
+${evidenceType}
+
+File name:
+${evidenceFileName}
+
+=================================
+VERIFICATION RULES
+=================================
+
+Analyze the uploaded evidence carefully.
+
+Check:
+
+1. Does the document/screenshot appear to be
+   related to learning or course completion?
+
+2. Does it indicate that the learner completed
+   or passed something?
+
+3. Is there a learner name visible?
+
+4. Is there a course/program name visible?
+
+5. Is there a platform/provider visible?
+
+6. Does the course or evidence reasonably relate
+   to the roadmap phase?
+
+7. Are the required skills reasonably related
+   to the evidence?
+
+8. Is there enough visible information to support
+   completion?
+
+9. If the evidence is clearly unrelated, reject it.
+
+10. If the evidence does not indicate completion,
+    reject it.
+
+11. Do not reject simply because the certificate
+    does not contain every required skill.
+
+12. Do not claim that the certificate is
+    cryptographically or legally authentic.
+
+=================================
+VERIFICATION DECISION
+=================================
+
+Set "verified" to true only when the evidence
+provides reasonable evidence of completion of
+the roadmap phase.
+
+Otherwise set "verified" to false.
+
+Confidence must be between 0 and 1.
+
+=================================
+RETURN ONLY JSON
+=================================
+
+{
+    "verified": false,
+    "confidence": 0,
+    "learnerName": "",
+    "courseName": "",
+    "platform": "",
+    "completionStatus": "",
+    "relevantSkills": [],
+    "reason": ""
+}
+
+`;
+
+        // =====================================
+        // CALL GEMINI
+        // =====================================
+
+        const response =
+            await this.gemini.models.generateContent({
+                model: 'gemini-3.6-flash',
+
+                contents: [
+                    {
+                        text: prompt,
+                    },
+                    {
+                        fileData: {
+                            fileUri:
+                                uploadedFile.uri,
+
+                            mimeType:
+                                uploadedFile.mimeType,
+                        },
+                    },
+                ],
+
+                config: {
+                    responseMimeType:
+                        'application/json',
+                },
+            });
+
+        // =====================================
+        // GET RESPONSE
+        // =====================================
+
+        const responseText =
+            response.text;
+
+        if (!responseText) {
+            throw new Error(
+                'Gemini returned an empty verification response.',
+            );
+        }
+
+        // =====================================
+        // PARSE JSON
+        // =====================================
+
+        let result: any;
+
+        try {
+
+            result =
+                JSON.parse(
+                    responseText,
+                );
+
+        } catch {
+
+            throw new Error(
+                'Gemini returned invalid verification JSON.',
+            );
 
         }
 
-
         // =====================================
-        // SAVE ROADMAP PROGRESS
-        // =====================================
-
-        await career.save();
-
-
-        // =====================================
-        // CALCULATE COMPLETED PHASES
+        // VALIDATE RESPONSE
         // =====================================
 
-        const completedPhases =
-            career.roadmapProgress.filter(
-                (item) => item.completed,
-            ).length;
+        if (
+            typeof result.verified !==
+            'boolean'
+        ) {
+            throw new Error(
+                'Invalid verification result from Gemini.',
+            );
+        }
 
-
-        // =====================================
-        // CALCULATE PROGRESS PERCENTAGE
-        // =====================================
-
-        const progressPercentage =
-            totalPhases > 0
-                ? Math.round(
-                    (completedPhases / totalPhases) * 100,
-                )
-                : 0;
-
-
-        // =====================================
-        // CHECK IF ROADMAP COMPLETED
-        // =====================================
-
-        const roadmapCompleted =
-
-            totalPhases > 0 &&
-
-            completedPhases === totalPhases;
-
-
-        // =====================================
-        // RETURN RESPONSE
-        // =====================================
+        if (
+            typeof result.confidence !==
+            'number'
+        ) {
+            result.confidence = 0;
+        }
 
         return {
+            verified:
+                result.verified,
 
-            message:
+            confidence:
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        result.confidence,
+                    ),
+                ),
 
-                roadmapCompleted
+            learnerName:
+                result.learnerName ||
+                '',
 
-                    ? `Congratulations! You have completed the ${career.selectedRoadmap.career} roadmap! 🎉`
+            courseName:
+                result.courseName ||
+                '',
 
-                    : 'Roadmap progress updated successfully.',
+            platform:
+                result.platform ||
+                '',
 
+            completionStatus:
+                result.completionStatus ||
+                '',
 
-            roadmapProgress:
-                career.roadmapProgress,
+            relevantSkills:
+                Array.isArray(
+                    result.relevantSkills,
+                )
+                    ? result.relevantSkills
+                    : [],
 
-
-            totalPhases,
-
-
-            completedPhases,
-
-
-            progressPercentage,
-
-
-            roadmapCompleted,
-
-
-            // ⭐ PROFILE SKILLS AFTER COMPLETING PHASE
-
-            updatedSkills,
-
+            reason:
+                result.reason ||
+                '',
         };
-
     }
 
+
     // =====================================
-    // GET LATEST CAREER RECOMMENDATIONS
+    // UPDATE ROADMAP PHASE PROGRESS
     // =====================================
+
+    async updateRoadmapProgress(
+        userId: string,
+        phaseIndex: number,
+        completed: boolean,
+    ) {
+        if (completed) {
+            throw new BadRequestException(
+                'Roadmap phases can only be completed after evidence verification.',
+            );
+        }
+
+        const career =
+            await this.careerModel.findOne({
+                userId,
+            });
+
+        if (!career) {
+            throw new NotFoundException(
+                'Career data not found.',
+            );
+        }
+
+        if (!career.selectedRoadmap) {
+            throw new NotFoundException(
+                'No roadmap selected.',
+            );
+        }
+
+        const totalPhases =
+            career.selectedRoadmap.roadmap?.length || 0;
+
+        if (
+            phaseIndex < 0 ||
+            phaseIndex >= totalPhases
+        ) {
+            throw new BadRequestException(
+                'Invalid roadmap phase.',
+            );
+        }
+
+        const existingProgress =
+            career.roadmapProgress.find(
+                (item) =>
+                    item.phaseIndex === phaseIndex,
+            );
+
+        if (existingProgress?.completed) {
+            throw new BadRequestException(
+                'Completed phases cannot be unchecked.',
+            );
+        }
+
+        return {
+            message:
+                'No roadmap progress update was required.',
+            roadmapProgress:
+                career.roadmapProgress,
+        };
+    }
+
 
     // =====================================
     // GET LATEST CAREER RECOMMENDATIONS

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import RoadmapProgress from "../components/RoadmapProgress";
+import FreeLearningResources from "../components/FreeLearningResources";
 
 
 interface RoadmapPhase {
@@ -27,6 +28,29 @@ interface RoadmapProgressItem {
     phaseIndex: number;
     completed: boolean;
     completedAt: string | null;
+
+    verificationStatus:
+        | "not_submitted"
+        | "pending"
+        | "verified"
+        | "rejected";
+
+    evidenceType:
+        | "certificate"
+        | "screenshot"
+        | null;
+
+    evidenceFileName: string | null;
+
+    verificationResult: {
+        confidence?: number;
+        learnerName?: string;
+        courseName?: string;
+        platform?: string;
+        completionStatus?: string;
+        relevantSkills?: string[];
+        reason?: string;
+    } | null;
 }
 
 
@@ -59,6 +83,18 @@ export default function MyRoadmapPage() {
 
     const [updatingPhase, setUpdatingPhase] =
         useState<number | null>(null);
+
+    const [proofModalOpen, setProofModalOpen] = useState(false);
+    const [selectedPhaseIndex, setSelectedPhaseIndex] = useState<number | null>(null);
+
+    const [proofFile, setProofFile] = useState<File | null>(null);
+    const [evidenceType, setEvidenceType] = useState<
+        "certificate" | "screenshot"
+    >("certificate");
+
+    const [uploadingProof, setUploadingProof] = useState(false);
+    const [proofMessage, setProofMessage] = useState("");
+    const [proofError, setProofError] = useState("");
 
 
     // ==========================================
@@ -190,6 +226,112 @@ export default function MyRoadmapPage() {
     };
 
 
+    // ==========================================
+    // SUBMIT ROADMAP COMPLETION PROOF
+    // ==========================================
+
+    const submitProof = async () => {
+        if (selectedPhaseIndex === null) {
+            return;
+        }
+
+        if (!proofFile) {
+            setProofError("Please select a certificate or screenshot.");
+            return;
+        }
+
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+            setProofError("You are not logged in.");
+            return;
+        }
+
+        try {
+            setUploadingProof(true);
+            setProofError("");
+            setProofMessage("");
+
+            const formData = new FormData();
+
+            formData.append(
+                "file",
+                proofFile,
+            );
+
+            formData.append(
+                "phaseIndex",
+                selectedPhaseIndex.toString(),
+            );
+
+            formData.append(
+                "evidenceType",
+                evidenceType,
+            );
+
+            const response = await fetch(
+                "http://localhost:5000/careers/roadmap-proof",
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+
+                    body: formData,
+                },
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message ||
+                    "Failed to submit completion proof.",
+                );
+            }
+
+            if (
+                data.verificationStatus ===
+                "verified"
+            ) {
+                setProofMessage(
+                    "Evidence verified successfully! This phase is now completed.",
+                );
+            } else if (
+                data.verificationStatus ===
+                "rejected"
+            ) {
+                setProofError(
+                    data.verificationResult?.reason ||
+                    "The submitted evidence could not be verified.",
+                );
+            } else {
+                setProofMessage(
+                    "Evidence submitted and is waiting for verification.",
+                );
+            }
+
+            setProofFile(null);
+
+            // Refresh roadmap data
+            await fetchRoadmap();
+
+        } catch (error: any) {
+
+            setProofError(
+                error.message ||
+                "Something went wrong while uploading the evidence.",
+            );
+
+        } finally {
+
+            setUploadingProof(false);
+
+        }
+    };
+
+
 
     // ==========================================
     // CHECK IF PHASE IS COMPLETED
@@ -207,6 +349,53 @@ export default function MyRoadmapPage() {
                 progress.completed === true
         );
 
+    };
+
+
+    // ==========================================
+    // GET PHASE PROGRESS
+    // ==========================================
+
+    const getPhaseProgress = (
+        phaseIndex: number,
+    ) => {
+        return (
+            roadmapData?.roadmapProgress?.find(
+                (item) =>
+                    item.phaseIndex === phaseIndex,
+            ) || null
+        );
+    };
+
+
+    // ==========================================
+    // GET VERIFICATION STATUS
+    // ==========================================
+
+    const getVerificationStatus = (
+        phaseIndex: number,
+    ) => {
+        return (
+            getPhaseProgress(phaseIndex)
+                ?.verificationStatus ||
+            "not_submitted"
+        );
+    };
+
+
+    // ==========================================
+    // CHECK IF PHASE IS UNLOCKED
+    // ==========================================
+
+    const isPhaseUnlocked = (phaseIndex: number) => {
+        // First phase is always unlocked
+        if (phaseIndex === 0) {
+            return true;
+        }
+
+        // Every other phase requires the previous phase
+        // to be completed and verified.
+        return isPhaseCompleted(phaseIndex - 1);
     };
 
 
@@ -786,35 +975,114 @@ export default function MyRoadmapPage() {
                                             </div>
 
 
-                                            {/* COMPLETE BUTTON */}
+                                            {/* COMPLETE / SUBMIT PROOF BUTTON */}
 
-                                            <button
-                                                onClick={() =>
-                                                    completePhase(index)
-                                                }
+                                            {completed ? (
+                                                <button
+                                                    disabled
+                                                    className="rounded-xl bg-green-500 px-5 py-3 text-sm font-semibold text-white"
+                                                >
+                                                    ✓ Verified Evidence
+                                                </button>
+                                            ) : getVerificationStatus(index) ===
+                                              "pending" ? (
 
-                                                disabled={
-                                                    completed ||
-                                                    updatingPhase !== null
-                                                }
+                                                <button
+                                                    disabled
+                                                    className="cursor-wait rounded-xl bg-blue-100 px-5 py-3 text-sm font-semibold text-blue-700"
+                                                >
+                                                    ⏳ Verification Pending
+                                                </button>
 
-                                                className={`rounded-xl px-5 py-3 text-sm font-semibold transition ${completed
-                                                    ? "cursor-not-allowed bg-green-500 text-white"
-                                                    : updatingPhase === index
-                                                        ? "cursor-wait bg-blue-400 text-white"
-                                                        : "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/25"
-                                                    }`}
-                                            >
+                                            ) : getVerificationStatus(index) ===
+                                              "rejected" ? (
 
-                                                {completed
-                                                    ? "✓ Completed"
-                                                    : updatingPhase === index
-                                                        ? "Updating..."
-                                                        : "Mark as Completed"}
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedPhaseIndex(index);
+                                                        setProofModalOpen(true);
+                                                        setProofFile(null);
+                                                        setProofError("");
+                                                        setProofMessage("");
+                                                        setEvidenceType("certificate");
+                                                    }}
+                                                    className="rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5"
+                                                >
+                                                    Submit New Evidence
+                                                </button>
 
-                                            </button>
+                                            ) : isPhaseUnlocked(index) ? (
+
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedPhaseIndex(index);
+                                                        setProofModalOpen(true);
+                                                        setProofFile(null);
+                                                        setProofError("");
+                                                        setProofMessage("");
+                                                        setEvidenceType("certificate");
+                                                    }}
+                                                    className="rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5"
+                                                >
+                                                    Submit Completion Proof
+                                                </button>
+
+                                            ) : (
+
+                                                <button
+                                                    disabled
+                                                    className="cursor-not-allowed rounded-xl bg-slate-200 px-5 py-3 text-sm font-semibold text-slate-500"
+                                                >
+                                                    🔒 Complete Previous Phase First
+                                                </button>
+
+                                            )}
 
                                         </div>
+
+
+                                        {/* VERIFICATION REJECTED REASON */}
+
+                                        {getVerificationStatus(index) ===
+                                            "rejected" &&
+                                            getPhaseProgress(index)
+                                                ?.verificationResult?.reason && (
+                                                <div className="mt-4 rounded-xl bg-red-50 p-4">
+
+                                                    <p className="text-sm font-semibold text-red-700">
+                                                        Evidence was not verified
+                                                    </p>
+
+                                                    <p className="mt-1 text-sm text-red-600">
+                                                        {
+                                                            getPhaseProgress(index)
+                                                                ?.verificationResult
+                                                                ?.reason
+                                                        }
+                                                    </p>
+
+                                                </div>
+                                            )}
+
+
+                                        {/* VERIFICATION PENDING INFO */}
+
+                                        {getVerificationStatus(index) ===
+                                            "pending" && (
+                                            <div className="mt-4 rounded-xl bg-blue-50 p-4">
+
+                                                <p className="text-sm font-semibold text-blue-700">
+                                                    Evidence submitted
+                                                </p>
+
+                                                <p className="mt-1 text-sm text-blue-600">
+                                                    Your evidence is being analyzed.
+                                                    The phase will be completed only
+                                                    after successful verification.
+                                                </p>
+
+                                            </div>
+                                        )}
 
 
                                         {/* DETAILS */}
@@ -882,6 +1150,9 @@ export default function MyRoadmapPage() {
 
                                         </div>
 
+                                        <FreeLearningResources
+                                            skills={phase.skills}
+                                        />
 
                                         {/* TASKS */}
 
@@ -930,6 +1201,160 @@ export default function MyRoadmapPage() {
                 </div>
 
             </main>
+
+
+            {/* ================= SUBMIT PROOF MODAL ================= */}
+
+            {proofModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+
+                    <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+
+                        <div className="mb-6 flex items-start justify-between">
+
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-900">
+                                    Submit Completion Proof
+                                </h2>
+
+                                <p className="mt-1 text-sm text-slate-500">
+                                    Upload evidence that you completed this roadmap phase.
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    setProofModalOpen(false);
+                                    setProofFile(null);
+                                    setProofError("");
+                                    setProofMessage("");
+                                }}
+                                className="rounded-lg px-3 py-2 text-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+
+                        <div className="mb-5">
+
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">
+                                Evidence Type
+                            </label>
+
+                            <select
+                                value={evidenceType}
+                                onChange={(e) =>
+                                    setEvidenceType(
+                                        e.target.value as
+                                            | "certificate"
+                                            | "screenshot",
+                                    )
+                                }
+                                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-orange-500"
+                            >
+                                <option value="certificate">
+                                    Certificate
+                                </option>
+
+                                <option value="screenshot">
+                                    Screenshot
+                                </option>
+                            </select>
+
+                        </div>
+
+
+                        <div className="mb-5">
+
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">
+                                Upload Evidence
+                            </label>
+
+                            <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                onChange={(e) => {
+                                    const file =
+                                        e.target.files?.[0] || null;
+
+                                    setProofFile(file);
+                                    setProofError("");
+                                }}
+                                className="w-full rounded-xl border border-slate-300 p-3 text-sm"
+                            />
+
+                            <p className="mt-2 text-xs text-slate-500">
+                                Accepted: PDF, JPG, JPEG, PNG. Maximum size: 10 MB.
+                            </p>
+
+                        </div>
+
+
+                        {proofFile && (
+                            <div className="mb-5 rounded-xl bg-slate-50 p-4">
+
+                                <p className="text-sm font-semibold text-slate-700">
+                                    Selected file
+                                </p>
+
+                                <p className="mt-1 break-all text-sm text-slate-500">
+                                    {proofFile.name}
+                                </p>
+
+                            </div>
+                        )}
+
+
+                        {proofError && (
+                            <div className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-600">
+                                {proofError}
+                            </div>
+                        )}
+
+
+                        {proofMessage && (
+                            <div className="mb-5 rounded-xl bg-green-50 p-4 text-sm text-green-700">
+                                {proofMessage}
+                            </div>
+                        )}
+
+
+                        <div className="flex gap-3">
+
+                            <button
+                                onClick={() => {
+                                    setProofModalOpen(false);
+                                    setProofFile(null);
+                                    setProofError("");
+                                    setProofMessage("");
+                                }}
+                                className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+
+
+                            <button
+                                onClick={submitProof}
+                                disabled={
+                                    uploadingProof ||
+                                    !proofFile
+                                }
+                                className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {uploadingProof
+                                    ? "Uploading..."
+                                    : "Submit Evidence"}
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            )}
 
         </div>
 
