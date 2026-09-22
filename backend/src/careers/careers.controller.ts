@@ -14,6 +14,8 @@ import {
 
 import { FileInterceptor } from '@nestjs/platform-express';
 
+import { memoryStorage } from 'multer';
+
 import { CareersService } from './careers.service';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -105,13 +107,16 @@ export class CareersController {
 
 
     // =====================================
-    // SUBMIT ROADMAP COMPLETION EVIDENCE
+    // SUBMIT ROADMAP TASK EVIDENCE
     // =====================================
 
     @Post('roadmap-proof')
     @UseInterceptors(
         FileInterceptor('file', {
-            dest: './uploads/roadmap-proof',
+            storage: memoryStorage(),
+            limits: {
+                fileSize: 10 * 1024 * 1024,
+            },
         }),
     )
     async submitRoadmapProof(
@@ -134,26 +139,96 @@ export class CareersController {
         @Body()
         body: {
             phaseIndex: string;
+            taskIndex: string;
             evidenceType: 'certificate' | 'screenshot';
         },
     ) {
+
         const phaseIndex = Number(body.phaseIndex);
+        const taskIndex = Number(body.taskIndex);
+
+        // =====================================
+        // VALIDATE PHASE
+        // =====================================
 
         if (Number.isNaN(phaseIndex)) {
-            throw new BadRequestException('Invalid roadmap phase.');
+            throw new BadRequestException(
+                'Invalid roadmap phase.',
+            );
         }
+
+
+        // =====================================
+        // VALIDATE TASK
+        // =====================================
+
+        if (Number.isNaN(taskIndex)) {
+            throw new BadRequestException(
+                'Invalid roadmap task.',
+            );
+        }
+
+
+        // =====================================
+        // VALIDATE FILE
+        // =====================================
 
         if (!file) {
-            throw new BadRequestException('Evidence file is required.');
+            throw new BadRequestException(
+                'Evidence file is required.',
+            );
         }
 
-        return this.careersService.initializePhaseVerification(
-            req.user.userId,
-            phaseIndex,
-            body.evidenceType,
-            file.originalname,
-            file.path,
-        );
+
+        // =====================================
+        // START VERIFICATION
+        // =====================================
+
+        return this.careersService
+            .initializePhaseVerification(
+                req.user.userId,
+
+                phaseIndex,
+
+                body.evidenceType,
+
+                file.originalname,
+
+                file,
+
+                false,
+
+                taskIndex,
+            );
+    }
+
+
+    // =====================================
+    // SUBMIT GITHUB REPOSITORY
+    // =====================================
+
+    @Post('roadmap-github-repo')
+    async submitRoadmapGithubRepo(
+        @Request() req: any,
+
+        @Body()
+        body: {
+            phaseIndex: number;
+            taskIndex: number;
+            repositoryUrl: string;
+        },
+    ) {
+
+        return this.careersService
+            .submitGithubRepository(
+                req.user.userId,
+
+                Number(body.phaseIndex),
+
+                Number(body.taskIndex),
+
+                body.repositoryUrl,
+            );
     }
 
 

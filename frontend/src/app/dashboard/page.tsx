@@ -10,13 +10,19 @@ type SkillGap = {
   reason: string;
 };
 
+type RoadmapTask = {
+  title: string;
+  type: "certificate" | "project" | "practice";
+  resourceUrl?: string | null;
+};
+
 type RoadmapPhase = {
   phase: string;
   skills: string[];
   description: string;
   estimatedDuration: string;
   weeklyHours: number;
-  tasks: string[];
+  tasks: RoadmapTask[];
 };
 
 type Recommendation = {
@@ -1306,7 +1312,7 @@ export default function Dashboard() {
                           •
                         </span>
 
-                        {task}
+                        {task.title}
 
                       </li>
 

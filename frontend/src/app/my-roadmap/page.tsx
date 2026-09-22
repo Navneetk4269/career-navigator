@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import RoadmapProgress from "../components/RoadmapProgress";
-import FreeLearningResources from "../components/FreeLearningResources";
 
 
 interface RoadmapPhase {
@@ -12,7 +11,11 @@ interface RoadmapPhase {
     description: string;
     estimatedDuration: string;
     weeklyHours: number;
-    tasks: string[];
+    tasks: {
+        title: string;
+        type: "certificate" | "project" | "practice";
+        resourceUrl?: string;
+    }[];
 }
 
 
@@ -26,6 +29,9 @@ interface SelectedRoadmap {
 
 interface RoadmapProgressItem {
     phaseIndex: number;
+    taskIndex: number | null;
+    taskTitle: string | null;
+
     completed: boolean;
     completedAt: string | null;
 
@@ -38,9 +44,11 @@ interface RoadmapProgressItem {
     evidenceType:
         | "certificate"
         | "screenshot"
+        | "github"
         | null;
 
     evidenceFileName: string | null;
+    evidenceFilePath?: string | null;
 
     verificationResult: {
         confidence?: number;
@@ -52,7 +60,6 @@ interface RoadmapProgressItem {
         reason?: string;
     } | null;
 }
-
 
 interface MyRoadmapData {
     message: string;
@@ -81,31 +88,39 @@ export default function MyRoadmapPage() {
     const [loading, setLoading] =
         useState(true);
 
-    const [updatingPhase, setUpdatingPhase] =
-        useState<number | null>(null);
-
     const [proofModalOpen, setProofModalOpen] = useState(false);
     const [selectedPhaseIndex, setSelectedPhaseIndex] = useState<number | null>(null);
 
     const [proofFile, setProofFile] = useState<File | null>(null);
     const [evidenceType, setEvidenceType] = useState<
-        "certificate" | "screenshot"
+        "certificate" | "screenshot" | "github"
     >("certificate");
+    const [repositoryUrl, setRepositoryUrl] = useState("");
+    const [selectedTaskIndex, setSelectedTaskIndex] = useState<number | null>(null);
 
     const [uploadingProof, setUploadingProof] = useState(false);
     const [proofMessage, setProofMessage] = useState("");
     const [proofError, setProofError] = useState("");
+
+    const selectedPhase =
+        selectedPhaseIndex === null
+            ? null
+            : roadmapData?.selectedRoadmap?.roadmap[
+                selectedPhaseIndex
+            ];
 
 
     // ==========================================
     // GET USER'S SELECTED ROADMAP
     // ==========================================
 
-    const fetchRoadmap = async () => {
+    const fetchRoadmap = async (showLoading = true) => {
 
         try {
 
-            setLoading(true);
+            if (showLoading) {
+                setLoading(true);
+            }
 
             const token =
                 localStorage.getItem("accessToken");
@@ -142,7 +157,9 @@ export default function MyRoadmapPage() {
 
         } finally {
 
-            setLoading(false);
+            if (showLoading) {
+                setLoading(false);
+            }
 
         }
 
@@ -155,88 +172,44 @@ export default function MyRoadmapPage() {
 
     }, []);
 
-
-
-    // ==========================================
-    // COMPLETE ROADMAP PHASE
-    // ==========================================
-
-    const completePhase = async (
-        phaseIndex: number
-    ) => {
-
-        // Prevent double clicking
-        if (updatingPhase !== null) return;
-
-
-        try {
-
-            setUpdatingPhase(phaseIndex);
-
-            const token =
-                localStorage.getItem("accessToken");
-
-
-            const response = await fetch(
-                "http://localhost:5000/careers/roadmap-progress",
-                {
-                    method: "PATCH",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-
-                        Authorization:
-                            `Bearer ${token}`,
-                    },
-
-                    body: JSON.stringify({
-                        phaseIndex,
-                        completed: true,
-                    }),
-                }
+    useEffect(() => {
+        const hasPendingVerification =
+            roadmapData?.roadmapProgress.some(
+                (item) =>
+                    item.verificationStatus === "pending",
             );
 
-
-            if (!response.ok) {
-
-                throw new Error(
-                    "Failed to update roadmap progress"
-                );
-
-            }
-
-
-            // Fetch updated data from backend
-            await fetchRoadmap();
-
-        } catch (error) {
-
-            console.error(
-                "Progress update error:",
-                error
-            );
-
-        } finally {
-
-            setUpdatingPhase(null);
-
+        if (!hasPendingVerification) {
+            return;
         }
 
-    };
+        const intervalId = window.setInterval(
+            () => fetchRoadmap(false),
+            5000,
+        );
 
+        return () => window.clearInterval(intervalId);
+    }, [roadmapData]);
 
+    
     // ==========================================
     // SUBMIT ROADMAP COMPLETION PROOF
     // ==========================================
 
     const submitProof = async () => {
-        if (selectedPhaseIndex === null) {
+        if (selectedPhaseIndex === null ||
+            selectedTaskIndex === null
+        ) {
             return;
         }
 
-        if (!proofFile) {
+        if (evidenceType !== "github" && !proofFile) {
             setProofError("Please select a certificate or screenshot.");
+            return;
+        }
+
+        if (evidenceType === "github" && !repositoryUrl.trim()) {
+            setProofError("Please enter your public GitHub repository URL.");
             return;
         }
 
@@ -251,6 +224,43 @@ export default function MyRoadmapPage() {
             setUploadingProof(true);
             setProofError("");
             setProofMessage("");
+
+            if (evidenceType === "github") {
+                const response = await fetch(
+                    "http://localhost:5000/careers/roadmap-github-repo",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                            phaseIndex: selectedPhaseIndex,
+                            taskIndex: selectedTaskIndex,
+                            repositoryUrl: repositoryUrl.trim(),
+                        }),
+                    },
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.message || "Failed to submit GitHub repository.",
+                    );
+                }
+
+                setProofMessage(
+                    "Repository submitted. Gemini is evaluating it now.",
+                );
+                setRepositoryUrl("");
+                await fetchRoadmap();
+                return;
+            }
+
+            if (!proofFile) {
+                return;
+            }
 
             const formData = new FormData();
 
@@ -267,6 +277,11 @@ export default function MyRoadmapPage() {
             formData.append(
                 "evidenceType",
                 evidenceType,
+            );
+
+            formData.append(
+                "taskIndex",
+                selectedTaskIndex.toString(),
             );
 
             const response = await fetch(
@@ -296,7 +311,7 @@ export default function MyRoadmapPage() {
                 "verified"
             ) {
                 setProofMessage(
-                    "Evidence verified successfully! This phase is now completed.",
+                    "Evidence verified successfully! This task is now completed.",
                 );
             } else if (
                 data.verificationStatus ===
@@ -313,6 +328,8 @@ export default function MyRoadmapPage() {
             }
 
             setProofFile(null);
+
+            setSelectedTaskIndex(null);
 
             // Refresh roadmap data
             await fetchRoadmap();
@@ -340,15 +357,29 @@ export default function MyRoadmapPage() {
     const isPhaseCompleted = (
         phaseIndex: number
     ) => {
-
         if (!roadmapData) return false;
 
-        return roadmapData.roadmapProgress.some(
-            (progress) =>
-                progress.phaseIndex === phaseIndex &&
-                progress.completed === true
-        );
+        const phase =
+            roadmapData.selectedRoadmap?.roadmap[phaseIndex];
 
+        if (!phase) return false;
+
+        const tasks = phase.tasks || [];
+
+        if (tasks.length === 0) {
+            return false;
+        }
+
+        return tasks.every((_, taskIndex) => {
+            const progress =
+                roadmapData.roadmapProgress.find(
+                    (item) =>
+                        item.phaseIndex === phaseIndex &&
+                        item.taskIndex === taskIndex
+                );
+
+            return progress?.completed === true;
+        });
     };
 
 
@@ -356,13 +387,15 @@ export default function MyRoadmapPage() {
     // GET PHASE PROGRESS
     // ==========================================
 
-    const getPhaseProgress = (
+    const getTaskProgress = (
         phaseIndex: number,
+        taskIndex: number,
     ) => {
         return (
             roadmapData?.roadmapProgress?.find(
                 (item) =>
-                    item.phaseIndex === phaseIndex,
+                    item.phaseIndex === phaseIndex &&
+                    item.taskIndex === taskIndex,
             ) || null
         );
     };
@@ -372,12 +405,15 @@ export default function MyRoadmapPage() {
     // GET VERIFICATION STATUS
     // ==========================================
 
-    const getVerificationStatus = (
+    const getTaskVerificationStatus = (
         phaseIndex: number,
+        taskIndex: number,
     ) => {
         return (
-            getPhaseProgress(phaseIndex)
-                ?.verificationStatus ||
+            getTaskProgress(
+                phaseIndex,
+                taskIndex,
+            )?.verificationStatus ||
             "not_submitted"
         );
     };
@@ -974,115 +1010,213 @@ export default function MyRoadmapPage() {
 
                                             </div>
 
-
-                                            {/* COMPLETE / SUBMIT PROOF BUTTON */}
-
-                                            {completed ? (
-                                                <button
-                                                    disabled
-                                                    className="rounded-xl bg-green-500 px-5 py-3 text-sm font-semibold text-white"
-                                                >
-                                                    ✓ Verified Evidence
-                                                </button>
-                                            ) : getVerificationStatus(index) ===
-                                              "pending" ? (
-
-                                                <button
-                                                    disabled
-                                                    className="cursor-wait rounded-xl bg-blue-100 px-5 py-3 text-sm font-semibold text-blue-700"
-                                                >
-                                                    ⏳ Verification Pending
-                                                </button>
-
-                                            ) : getVerificationStatus(index) ===
-                                              "rejected" ? (
-
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedPhaseIndex(index);
-                                                        setProofModalOpen(true);
-                                                        setProofFile(null);
-                                                        setProofError("");
-                                                        setProofMessage("");
-                                                        setEvidenceType("certificate");
-                                                    }}
-                                                    className="rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5"
-                                                >
-                                                    Submit New Evidence
-                                                </button>
-
-                                            ) : isPhaseUnlocked(index) ? (
-
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedPhaseIndex(index);
-                                                        setProofModalOpen(true);
-                                                        setProofFile(null);
-                                                        setProofError("");
-                                                        setProofMessage("");
-                                                        setEvidenceType("certificate");
-                                                    }}
-                                                    className="rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5"
-                                                >
-                                                    Submit Completion Proof
-                                                </button>
-
-                                            ) : (
-
-                                                <button
-                                                    disabled
-                                                    className="cursor-not-allowed rounded-xl bg-slate-200 px-5 py-3 text-sm font-semibold text-slate-500"
-                                                >
-                                                    🔒 Complete Previous Phase First
-                                                </button>
-
-                                            )}
-
                                         </div>
 
 
-                                        {/* VERIFICATION REJECTED REASON */}
+                                        {/* TASKS */}
 
-                                        {getVerificationStatus(index) ===
-                                            "rejected" &&
-                                            getPhaseProgress(index)
-                                                ?.verificationResult?.reason && (
-                                                <div className="mt-4 rounded-xl bg-red-50 p-4">
+                                        <div className="mt-8">
 
-                                                    <p className="text-sm font-semibold text-red-700">
-                                                        Evidence was not verified
-                                                    </p>
+                                            <div className="mb-4 flex items-center justify-between">
+                                                <h3 className="text-lg font-bold text-slate-900">
+                                                    Tasks
+                                                </h3>
 
-                                                    <p className="mt-1 text-sm text-red-600">
-                                                        {
-                                                            getPhaseProgress(index)
-                                                                ?.verificationResult
-                                                                ?.reason
-                                                        }
-                                                    </p>
+                                                <span className="text-sm text-slate-500">
+                                                    {phase.tasks.length}{" "}
+                                                    {phase.tasks.length === 1 ? "task" : "tasks"}
+                                                </span>
+                                            </div>
 
-                                                </div>
-                                            )}
+                                            <div className="space-y-4">
+
+                                                {phase.tasks.map((task, taskIndex) => {
+
+                                                    const taskProgress =
+                                                        getTaskProgress(
+                                                            index,
+                                                            taskIndex,
+                                                        );
+
+                                                    const taskStatus =
+                                                        getTaskVerificationStatus(
+                                                            index,
+                                                            taskIndex,
+                                                        );
+
+                                                    const taskCompleted =
+                                                        taskProgress?.completed === true;
+
+                                                    const isGithubTask =
+                                                        task.type === "project" ||
+                                                        task.type === "practice";
+
+                                                    const isCertificateTask =
+                                                        task.type === "certificate";
+
+                                                    return (
+                                                        <div
+                                                            key={taskIndex}
+                                                            className={`rounded-2xl border p-5 transition ${
+                                                                taskCompleted
+                                                                    ? "border-green-200 bg-green-50"
+                                                                    : "border-slate-200 bg-white"
+                                                            }`}
+                                                        >
+
+                                                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+
+                                                                {/* TASK INFORMATION */}
+
+                                                                <div className="flex items-start gap-4">
+
+                                                                    {/* TASK NUMBER / CHECK */}
+
+                                                                    <div
+                                                                        className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                                                                            taskCompleted
+                                                                                ? "bg-green-500 text-white"
+                                                                                : "bg-slate-100 text-slate-600"
+                                                                        }`}
+                                                                    >
+                                                                        {taskCompleted
+                                                                            ? "✓"
+                                                                            : taskIndex + 1}
+                                                                    </div>
 
 
-                                        {/* VERIFICATION PENDING INFO */}
+                                                                    {/* TASK TEXT */}
 
-                                        {getVerificationStatus(index) ===
-                                            "pending" && (
-                                            <div className="mt-4 rounded-xl bg-blue-50 p-4">
+                                                                    <div>
 
-                                                <p className="text-sm font-semibold text-blue-700">
-                                                    Evidence submitted
-                                                </p>
+                                                                        <h4 className="font-bold text-slate-900">
+                                                                            {task.title}
+                                                                        </h4>
 
-                                                <p className="mt-1 text-sm text-blue-600">
-                                                    Your evidence is being analyzed.
-                                                    The phase will be completed only
-                                                    after successful verification.
-                                                </p>
+                                                                        <span
+                                                                            className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                                                                                task.type === "certificate"
+                                                                                    ? "bg-purple-100 text-purple-700"
+                                                                                    : task.type === "project"
+                                                                                        ? "bg-blue-100 text-blue-700"
+                                                                                        : "bg-orange-100 text-orange-700"
+                                                                            }`}
+                                                                        >
+                                                                            {task.type}
+                                                                        </span>
+
+                                                                    </div>
+
+                                                                </div>
+
+
+                                                                {/* TASK STATUS / BUTTON */}
+
+                                                                <div className="shrink-0">
+
+                                                                    {taskCompleted ? (
+
+                                                                        <span className="inline-flex items-center rounded-xl bg-green-100 px-4 py-2.5 text-sm font-semibold text-green-700">
+                                                                            ✓ Verified
+                                                                        </span>
+
+                                                                    ) : taskStatus === "pending" ? (
+
+                                                                        <span className="inline-flex items-center rounded-xl bg-blue-100 px-4 py-2.5 text-sm font-semibold text-blue-700">
+                                                                            ⏳ Verification Pending
+                                                                        </span>
+
+                                                                    ) : taskStatus === "rejected" ? (
+
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setSelectedPhaseIndex(index);
+                                                                                setSelectedTaskIndex(taskIndex);
+
+                                                                                setProofModalOpen(true);
+
+                                                                                setProofFile(null);
+                                                                                setRepositoryUrl("");
+
+                                                                                setProofError("");
+                                                                                setProofMessage("");
+
+                                                                                setEvidenceType(
+                                                                                    isGithubTask
+                                                                                        ? "github"
+                                                                                        : "certificate"
+                                                                                );
+                                                                            }}
+                                                                            className="rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5"
+                                                                        >
+                                                                            Submit Again
+                                                                        </button>
+
+                                                                    ) : isPhaseUnlocked(index) ? (
+
+                                                                        <div className="flex flex-col gap-2 sm:flex-row">
+
+                                                                            {isCertificateTask && task.resourceUrl && (
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        window.open(
+                                                                                            task.resourceUrl,
+                                                                                            "_blank",
+                                                                                            "noopener,noreferrer"
+                                                                                        );
+                                                                                    }}
+                                                                                    className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                                                                                >
+                                                                                    Open Course
+                                                                                </button>
+                                                                            )}
+
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setSelectedPhaseIndex(index);
+                                                                                    setSelectedTaskIndex(taskIndex);
+
+                                                                                    setProofModalOpen(true);
+
+                                                                                    setProofFile(null);
+                                                                                    setRepositoryUrl("");
+
+                                                                                    setProofError("");
+                                                                                    setProofMessage("");
+
+                                                                                    setEvidenceType(
+                                                                                        isGithubTask
+                                                                                            ? "github"
+                                                                                            : "certificate"
+                                                                                    );
+                                                                                }}
+                                                                                className="rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5"
+                                                                            >
+                                                                                {isGithubTask
+                                                                                    ? "Submit GitHub Repository"
+                                                                                    : "Submit Proof"}
+                                                                            </button>
+
+                                                                        </div>
+
+                                                                    ) : (
+                                                                        <span className="inline-flex items-center rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-500">
+                                                                            🔒 Complete Previous Phase
+                                                                        </span>
+
+                                                                    )}
+
+                                                                </div>
+
+                                                            </div>
+
+                                                        </div>
+                                                    );
+                                                })}
 
                                             </div>
-                                        )}
+
+                                        </div>
 
 
                                         {/* DETAILS */}
@@ -1149,46 +1283,7 @@ export default function MyRoadmapPage() {
                                             </div>
 
                                         </div>
-
-                                        <FreeLearningResources
-                                            skills={phase.skills}
-                                        />
-
-                                        {/* TASKS */}
-
-                                        <div className="mt-6">
-
-                                            <h3 className="font-bold text-slate-900">
-                                                Learning Tasks
-                                            </h3>
-
-
-                                            <ul className="mt-3 space-y-3">
-
-                                                {phase.tasks.map(
-                                                    (task, taskIndex) => (
-
-                                                        <li
-                                                            key={taskIndex}
-                                                            className="flex gap-3 rounded-xl px-3 py-2 text-slate-600 transition hover:bg-slate-50"
-                                                        >
-
-                                                            <span className="font-bold text-orange-500">
-                                                                →
-                                                            </span>
-
-                                                            {task}
-
-                                                        </li>
-
-                                                    )
-                                                )}
-
-                                            </ul>
-
-                                        </div>
-
-
+                                        
                                     </div>
 
                                 );
@@ -1214,11 +1309,11 @@ export default function MyRoadmapPage() {
 
                             <div>
                                 <h2 className="text-2xl font-bold text-slate-900">
-                                    Submit Completion Proof
+                                    Submit Task Evidence
                                 </h2>
 
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Upload evidence that you completed this roadmap phase.
+                                    Submit evidence that you completed this roadmap task.
                                 </p>
                             </div>
 
@@ -1237,35 +1332,49 @@ export default function MyRoadmapPage() {
                         </div>
 
 
-                        <div className="mb-5">
+                        {selectedPhaseIndex !== null &&
+                            selectedTaskIndex !== null &&
+                            selectedPhase?.tasks[selectedTaskIndex] && (
+                                <div className="mt-4 mb-5 rounded-xl bg-slate-50 p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                        Selected Task
+                                    </p>
 
-                            <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                Evidence Type
-                            </label>
+                                    <p className="mt-1 font-semibold text-slate-900">
+                                        {selectedPhase.tasks[selectedTaskIndex].title}
+                                    </p>
 
-                            <select
-                                value={evidenceType}
-                                onChange={(e) =>
-                                    setEvidenceType(
-                                        e.target.value as
-                                            | "certificate"
-                                            | "screenshot",
-                                    )
-                                }
-                                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-orange-500"
-                            >
-                                <option value="certificate">
-                                    Certificate
-                                </option>
-
-                                <option value="screenshot">
-                                    Screenshot
-                                </option>
-                            </select>
-
-                        </div>
+                                    <p className="mt-1 text-xs font-medium uppercase text-slate-400">
+                                        {selectedPhase.tasks[selectedTaskIndex].type}
+                                    </p>
+                                </div>
+                            )}
 
 
+                        {evidenceType === "github" ? (
+                            <div className="mb-5">
+
+                                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                                    Public GitHub Repository URL
+                                </label>
+
+                                <input
+                                    type="url"
+                                    value={repositoryUrl}
+                                    onChange={(e) => {
+                                        setRepositoryUrl(e.target.value);
+                                        setProofError("");
+                                    }}
+                                    placeholder="https://github.com/owner/repository"
+                                    className="w-full rounded-xl border border-slate-300 p-3 text-sm"
+                                />
+
+                                <p className="mt-2 text-xs text-slate-500">
+                                    Gemini will evaluate the repository source code, README, and project structure against this task.
+                                </p>
+
+                            </div>
+                        ) : (
                         <div className="mb-5">
 
                             <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -1290,6 +1399,7 @@ export default function MyRoadmapPage() {
                             </p>
 
                         </div>
+                        )}
 
 
                         {proofFile && (
@@ -1340,7 +1450,9 @@ export default function MyRoadmapPage() {
                                 onClick={submitProof}
                                 disabled={
                                     uploadingProof ||
-                                    !proofFile
+                                    (evidenceType === "github"
+                                        ? !repositoryUrl.trim()
+                                        : !proofFile)
                                 }
                                 className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
                             >

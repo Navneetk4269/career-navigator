@@ -430,17 +430,38 @@ function CareerRoadmapModal({
                               <ul className="mt-2 space-y-2">
                                 {phase.tasks.map(
                                   (
-                                    task: string,
+                                    task: any,
                                     taskIndex: number
                                   ) => (
                                     <li
-                                      key={taskIndex}
+                                      key={task?._id || taskIndex}
                                       className="flex items-start gap-2 text-sm text-slate-600"
                                     >
                                       <span className="mt-1 font-bold text-blue-600">
                                         •
                                       </span>
-                                      <span>{task}</span>
+
+                                      <div>
+                                        <p className="font-medium text-slate-700">
+                                          {typeof task === "string"
+                                            ? task
+                                            : task?.title || "Untitled task"}
+                                        </p>
+
+                                        {typeof task === "object" && task?.type && (
+                                          <span
+                                            className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                                              task.type === "certificate"
+                                                ? "bg-purple-100 text-purple-700"
+                                                : task.type === "project"
+                                                  ? "bg-blue-100 text-blue-700"
+                                                  : "bg-orange-100 text-orange-700"
+                                            }`}
+                                          >
+                                            {task.type}
+                                          </span>
+                                        )}
+                                      </div>
                                     </li>
                                   )
                                 )}
@@ -1699,15 +1720,39 @@ export default function Explorer() {
 
                                 <ul className="mt-2 space-y-1.5">
                                   {phase.tasks.map(
-                                    (task: string, taskIndex: number) => (
+                                    (
+                                      task: any,
+                                      taskIndex: number
+                                    ) => (
                                       <li
-                                        key={taskIndex}
+                                        key={task?._id || taskIndex}
                                         className="flex items-start gap-2 text-sm text-slate-600"
                                       >
                                         <span className="mt-0.5 font-bold text-blue-600">
                                           ✓
                                         </span>
-                                        <span>{task}</span>
+
+                                        <div>
+                                          <p className="font-medium text-slate-700">
+                                            {typeof task === "string"
+                                              ? task
+                                              : task?.title || "Untitled task"}
+                                          </p>
+
+                                          {typeof task === "object" && task?.type && (
+                                            <span
+                                              className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                                                task.type === "certificate"
+                                                  ? "bg-purple-100 text-purple-700"
+                                                  : task.type === "project"
+                                                    ? "bg-blue-100 text-blue-700"
+                                                    : "bg-orange-100 text-orange-700"
+                                              }`}
+                                            >
+                                              {task.type}
+                                            </span>
+                                          )}
+                                        </div>
                                       </li>
                                     )
                                   )}

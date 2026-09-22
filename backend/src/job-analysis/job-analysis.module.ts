@@ -24,6 +24,8 @@ import {
   ProfileSchema,
 } from '../profiles/schemas/profile.schema';
 
+import { MarketDemand, MarketDemandSchema } from '../market-demand/schemas/market-demand.schema';
+
 
 @Module({
 
@@ -39,6 +41,11 @@ import {
       {
         name: Profile.name,
         schema: ProfileSchema,
+      },
+
+      {
+        name: MarketDemand.name,
+        schema: MarketDemandSchema,
       },
 
     ]),

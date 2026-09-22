@@ -3,13 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+interface RoadmapTask {
+    title: string;
+    type: "certificate" | "project" | "practice";
+    _id?: string;
+}
+
 interface RoadmapPhase {
     phase: string;
     skills: string[];
     description: string;
     estimatedDuration: string;
     weeklyHours: number;
-    tasks: string[];
+    tasks: RoadmapTask[];
 }
 
 interface MissingSkill {
@@ -304,9 +310,23 @@ export default function RoadmapModal({
                                                                     ✓
                                                                 </span>
 
-                                                                <span>
-                                                                    {task}
-                                                                </span>
+                                                                <div>
+                                                                    <p className="font-medium text-gray-700">
+                                                                        {task.title}
+                                                                    </p>
+
+                                                                    <span
+                                                                        className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold uppercase ${
+                                                                            task.type === "certificate"
+                                                                                ? "bg-purple-100 text-purple-700"
+                                                                                : task.type === "project"
+                                                                                    ? "bg-blue-100 text-blue-700"
+                                                                                    : "bg-orange-100 text-orange-700"
+                                                                        }`}
+                                                                    >
+                                                                        {task.type}
+                                                                    </span>
+                                                                </div>
 
                                                             </li>
 

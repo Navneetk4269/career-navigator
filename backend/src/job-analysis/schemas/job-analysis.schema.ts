@@ -3,6 +3,12 @@ import { HydratedDocument } from 'mongoose';
 
 export type JobAnalysisDocument = HydratedDocument<JobAnalysis>;
 
+interface JobRoadmapTask {
+    title: string;
+    type: 'certificate' | 'project' | 'practice';
+    resourceUrl?: string;
+}
+
 @Schema({ timestamps: true })
 export class JobAnalysis {
     @Prop({ required: true })
@@ -11,6 +17,11 @@ export class JobAnalysis {
     @Prop({ required: true })
     jobDescription!: string;
 
+    // Career identified from the job description
+    @Prop({ required: false })
+    career!: string;
+
+    // This will come from Market Demand / Career recommendation
     @Prop({ min: 0, max: 100 })
     matchScore!: number;
 
@@ -21,12 +32,7 @@ export class JobAnalysis {
     strengths!: string[];
 
     @Prop({
-        type: [
-            {
-                skill: String,
-                explanation: String,
-            },
-        ],
+        type: [{ skill: String, explanation: String }],
         default: [],
     })
     explanations!: {
@@ -42,6 +48,7 @@ export class JobAnalysis {
         reason: string;
     }[];
 
+    // Keep this for compatibility for now
     @Prop({ type: [Object], default: [] })
     roadmap!: {
         phase: string;
@@ -49,9 +56,10 @@ export class JobAnalysis {
         description: string;
         estimatedDuration: string;
         weeklyHours: number;
-        tasks: string[];
+        tasks: JobRoadmapTask[];
     }[];
 
+    // Shared roadmap from Market Demand
     @Prop({ type: [Object], default: [] })
     generalRoadmap!: {
         phase: string;
@@ -59,7 +67,7 @@ export class JobAnalysis {
         description: string;
         estimatedDuration: string;
         weeklyHours: number;
-        tasks: string[];
+        tasks: JobRoadmapTask[];
     }[];
 }
 

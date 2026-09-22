@@ -23,6 +23,323 @@ import {
 
 import * as path from 'path';
 
+// ============================================================
+// IBM SKILLSBUILD RESOURCE CATALOG
+// ============================================================
+
+const IBM_RESOURCES = [
+    {
+        title: 'IBM SkillsBuild — Front-End Web Development',
+        keywords: [
+            'frontend',
+            'front-end',
+            'web development',
+            'html',
+            'css',
+            'javascript',
+            'react',
+            'typescript',
+            'web developer',
+            'frontend developer',
+        ],
+        url: 'https://skills.yourlearning.ibm.com/activity/PLAN-8749C02A78EC',
+    },
+
+    {
+        title: 'IBM SkillsBuild — Software Engineering for Web Developers',
+        keywords: [
+            'full stack',
+            'full-stack',
+            'software engineering',
+            'web developer',
+            'backend',
+            'back-end',
+            'node',
+            'node.js',
+            'api',
+            'database',
+            'mongodb',
+            'mysql',
+        ],
+        url: 'https://skillsbuild.org/learning-catalog?topic=software-development',
+    },
+
+    {
+        title: 'IBM SkillsBuild — UX Design',
+        keywords: [
+            'ui',
+            'ux',
+            'ui/ux',
+            'ui ux',
+            'user experience',
+            'user interface',
+            'ux design',
+            'ui design',
+            'user research',
+            'wireframe',
+            'wireframing',
+            'prototype',
+            'prototyping',
+            'usability',
+            'usability testing',
+            'design thinking',
+        ],
+        url: 'https://skills.yourlearning.ibm.com/activity/PLAN-3749C72117E2',
+    },
+
+    {
+        title: 'IBM SkillsBuild — Data & Analytics',
+        keywords: [
+            'data analyst',
+            'data analytics',
+            'data analysis',
+            'analytics',
+            'data visualization',
+            'statistics',
+            'business intelligence',
+            'bi',
+            'excel',
+            'sql',
+            'data',
+        ],
+        url: 'https://skills.yourlearning.ibm.com/activity/PLAN-BC0FAEE8E439',
+    },
+
+    {
+        title: 'IBM SkillsBuild — Artificial Intelligence Fundamentals',
+        keywords: [
+            'artificial intelligence',
+            'artificial intelligence engineer',
+            'ai',
+            'machine learning',
+            'ml',
+            'deep learning',
+            'nlp',
+            'natural language processing',
+            'computer vision',
+            'neural network',
+            'generative ai',
+        ],
+        url: 'https://skills.yourlearning.ibm.com/activity/PLAN-7913EE1DB030',
+    },
+
+    {
+        title: 'IBM SkillsBuild — Cybersecurity Fundamentals',
+        keywords: [
+            'cybersecurity',
+            'cyber security',
+            'security',
+            'information security',
+            'ethical hacking',
+            'penetration testing',
+            'soc',
+            'security analyst',
+            'incident response',
+            'threat analysis',
+            'network security',
+        ],
+        url: 'https://skills.yourlearning.ibm.com/activity/ILB-DNRPWDGQGMMY7GGD',
+    },
+
+    {
+        title: 'IBM SkillsBuild — Cloud Computing',
+        keywords: [
+            'cloud',
+            'cloud computing',
+            'cloud engineer',
+            'devops',
+            'dev ops',
+            'aws',
+            'azure',
+            'docker',
+            'kubernetes',
+            'virtualization',
+            'infrastructure',
+            'deployment',
+            'ci/cd',
+        ],
+        url: 'https://skills.yourlearning.ibm.com/activity/PLAN-2EC3A305F2C3',
+    },
+
+    {
+        title: 'IBM SkillsBuild — IT & Cloud',
+        keywords: [
+            'information technology',
+            'it support',
+            'it specialist',
+            'network',
+            'networking',
+            'computer networks',
+            'systems',
+            'system administrator',
+            'technical support',
+            'infrastructure',
+        ],
+        url: 'https://skills.yourlearning.ibm.com/activity/PLAN-3E2A749669E2',
+    },
+
+    {
+        title: 'IBM SkillsBuild — Applied Data Science with Python',
+        keywords: [
+            'data scientist',
+            'data science',
+            'python',
+            'pandas',
+            'data analysis',
+            'data visualization',
+            'machine learning',
+        ],
+        url: 'https://skills.yourlearning.ibm.com/activity/PLAN-B6CBEFCA2BFD',
+    },
+];
+
+
+// ============================================================
+// FIND THE MOST RELEVANT IBM RESOURCE
+// ============================================================
+
+function findBestIbmResource(
+    career: string,
+    phase: any,
+) {
+    const searchText = [
+        career || '',
+        phase?.phase || '',
+        phase?.description || '',
+        ...(Array.isArray(phase?.skills)
+            ? phase.skills
+            : []),
+    ]
+        .join(' ')
+        .toLowerCase();
+
+    let bestResource: any = null;
+    let bestScore = 0;
+
+    for (const resource of IBM_RESOURCES) {
+
+        let score = 0;
+
+        for (const keyword of resource.keywords) {
+
+            if (searchText.includes(keyword.toLowerCase())) {
+                score++;
+            }
+        }
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestResource = resource;
+        }
+    }
+
+    return bestResource;
+}
+
+
+// ============================================================
+// ADD THE MOST RELEVANT IBM RESOURCE AS A REQUIRED TASK
+// ============================================================
+
+function addRequiredIbmCourseTasks(
+    roadmap: any[],
+    career: string,
+) {
+    if (!Array.isArray(roadmap)) {
+        return roadmap;
+    }
+
+    let resourceAdded = false;
+
+    return roadmap.map((phase: any) => {
+        let tasks = Array.isArray(phase?.tasks)
+            ? [...phase.tasks]
+            : [];
+
+        const resource = findBestIbmResource(
+            career,
+            phase,
+        );
+
+        if (!resource) {
+            return {
+                ...phase,
+                tasks,
+            };
+        }
+
+        // Find any IBM SkillsBuild task Gemini may
+        // have generated itself.
+        const existingIbmIndex = tasks.findIndex(
+            (task: any) =>
+                typeof task !== 'string' &&
+                task?.type === 'certificate' &&
+                typeof task?.title === 'string' &&
+                task.title
+                    .toLowerCase()
+                    .includes('ibm skillsbuild'),
+        );
+
+        // If an IBM task already exists, replace it
+        // with our verified resource.
+        if (existingIbmIndex !== -1) {
+            if (!resourceAdded) {
+                tasks[existingIbmIndex] = {
+                    title: `Complete ${resource.title}`,
+                    type: 'certificate',
+                    resourceUrl: resource.url,
+                };
+
+                resourceAdded = true;
+            } else {
+                // Remove duplicate IBM tasks
+                tasks = tasks.filter(
+                    (_task: any, index: number) =>
+                        index === existingIbmIndex ||
+                        !(
+                            typeof _task !== 'string' &&
+                            _task?.type === 'certificate' &&
+                            typeof _task?.title === 'string' &&
+                            _task.title
+                                .toLowerCase()
+                                .includes('ibm skillsbuild')
+                        ),
+                );
+            }
+
+            return {
+                ...phase,
+                tasks,
+            };
+        }
+
+        // Add our IBM resource if one hasn't
+        // been added to the roadmap yet.
+        if (!resourceAdded) {
+            const certificateTask = {
+                title: `Complete ${resource.title}`,
+                type: 'certificate',
+                resourceUrl: resource.url,
+            };
+
+            resourceAdded = true;
+
+            return {
+                ...phase,
+                tasks: [
+                    certificateTask,
+                    ...tasks,
+                ],
+            };
+        }
+
+        return {
+            ...phase,
+            tasks,
+        };
+    });
+}
+
 
 @Injectable()
 export class CareersService {
@@ -368,6 +685,84 @@ the roadmap can progress faster.
 
 10. Do not overload one phase with too many skills.
 
+11. REQUIRED LEARNING ACTIVITIES:
+
+If a relevant IBM SkillsBuild course or learning path is
+appropriate for a roadmap phase, identify the learning
+activity by its specific course/path name.
+
+The backend application will assign the verified IBM
+SkillsBuild URL after Gemini returns the roadmap.
+
+Therefore, Gemini MUST NOT generate or guess IBM SkillsBuild URLs.
+
+
+12. A required IBM SkillsBuild course or learning path MUST
+be represented inside that phase's "tasks" array.
+
+
+13. A required IBM SkillsBuild course or learning path MUST use:
+
+"type": "certificate"
+
+
+14. Do NOT place a required IBM SkillsBuild course only
+in an informational recommendation.
+
+
+15. The certificate task must have a specific title such as:
+
+"Complete IBM SkillsBuild — Front-End Web Development"
+
+or
+
+"Complete IBM SkillsBuild — Software Engineering for Web Developers"
+
+
+16. Use "certificate" for courses, certifications,
+and structured learning activities where completion can
+be demonstrated using a certificate, credential,
+or completion screenshot.
+
+
+17. Use "project" for portfolio projects.
+
+
+18. Use "practice" for hands-on coding activities
+that can be demonstrated through a public GitHub repository.
+
+
+19. A phase may contain a mixture of certificate,
+project, and practice tasks.
+
+
+20. Only recommend an IBM SkillsBuild course or learning path
+when it is genuinely relevant to the skills being learned
+in that phase.
+
+
+21. IBM SkillsBuild URLs MUST NOT be generated by Gemini.
+
+Do NOT use:
+
+"https://skillsbuild.org/learning-catalog"
+
+Do NOT use:
+
+"https://skillsbuild.org/"
+
+Do NOT invent "skills.yourlearning.ibm.com" activity IDs.
+
+Do NOT guess activity IDs.
+
+The backend will add the verified resourceUrl.
+
+
+22. If an IBM SkillsBuild learning activity is appropriate,
+provide only its specific title in the task.
+
+The backend will automatically attach the verified URL.
+
 
 =================================
 ROADMAP FORMAT
@@ -393,6 +788,62 @@ For every phase provide:
 - weeklyHours
 - tasks
 
+Each task must be an object with:
+
+- title: a specific, testable learning activity
+- type: exactly one of "certificate", "project", or "practice"
+- resourceUrl: optional URL for non-IBM learning resources only
+
+
+IMPORTANT RESOURCE URL RULE:
+
+For IBM SkillsBuild tasks, DO NOT provide resourceUrl.
+
+The backend application will automatically add the
+verified IBM SkillsBuild URL after Gemini returns the roadmap.
+
+For certificate tasks:
+
+- Include resourceUrl when the task is based on a specific
+online course, certification, or learning resource.
+
+- Use a real, relevant URL.
+
+- Do not invent URLs.
+
+For project and practice tasks:
+
+- resourceUrl may be omitted.
+
+Use "project" for portfolio projects.
+
+Use "practice" for hands-on coding work that can be
+demonstrated through a public GitHub repository.
+
+Use "certificate" for required courses, certifications,
+or structured learning activities where the user can
+provide completion evidence.
+
+IMPORTANT:
+
+If an IBM SkillsBuild course is included in a phase,
+the course MUST be represented as a certificate task.
+
+Example:
+
+{
+    "title": "Complete IBM SkillsBuild — Front-End Web Development",
+    "type": "certificate"
+}
+
+The backend will automatically attach the verified
+IBM SkillsBuild resourceUrl to this task.
+
+The user must complete this course and submit a certificate
+or completion screenshot.
+
+The IBM course MUST NOT be represented only as an
+informational recommendation.
 
 =================================
 RETURN FORMAT
@@ -446,7 +897,13 @@ Return exactly this structure:
 
           "weeklyHours": 0,
 
-          "tasks": []
+          "tasks": [
+            {
+              "title": "",
+              "type": "certificate",
+              "resourceUrl": ""
+            }
+          ]
         }
 
       ]
@@ -464,69 +921,121 @@ Return exactly this structure:
             // STEP 5: CALL GEMINI WITH RETRY
             // =====================================
 
+            // =====================================
+            // STEP 5: CALL GEMINI WITH MODEL FALLBACK
+            // =====================================
+
             let response: any;
 
-            const maxRetries = 3;
+            const models = [
+                'gemini-3.8-flash',
+                'gemini-3.7-flash',
+                'gemini-3.5-flash-lite',
+            ];
 
+            const maxRetriesPerModel = 2;
 
-            for (
-                let attempt = 1;
-                attempt <= maxRetries;
-                attempt++
-            ) {
+            let lastError: any = null;
 
-                try {
+            for (const model of models) {
 
-                    response =
-                        await this.gemini.models.generateContent({
+                console.log(
+                    `Trying Gemini model: ${model}`,
+                );
 
-                            model: 'gemini-3.6-flash',
+                for (
+                    let attempt = 1;
+                    attempt <= maxRetriesPerModel;
+                    attempt++
+                ) {
 
-                            contents: prompt,
+                    try {
 
-                            config: {
-                                responseMimeType:
-                                    'application/json',
-                            },
+                        response =
+                            await this.gemini.models.generateContent({
 
-                        });
+                                model,
 
+                                contents: prompt,
 
-                    // SUCCESS
-                    break;
+                                config: {
+                                    responseMimeType:
+                                        'application/json',
+                                },
 
-                } catch (error: any) {
+                            });
 
-                    console.error(
-                        `Gemini Career attempt ${attempt} failed:`,
-                        error?.message,
-                    );
+                        console.log(
+                            `Gemini succeeded using model: ${model}`,
+                        );
 
+                        break;
 
-                    if (attempt === maxRetries) {
-                        throw error;
+                    } catch (error: any) {
+
+                        lastError = error;
+
+                        const status =
+                            error?.status ||
+                            error?.code;
+
+                        console.error(
+                            `Gemini ${model} attempt ${attempt} failed:`,
+                            error?.message,
+                        );
+
+                        // Only retry/fallback for temporary
+                        // rate-limit or service availability errors.
+                        if (
+                            status !== 503 &&
+                            status !== 429
+                        ) {
+                            throw error;
+                        }
+
+                        if (
+                            attempt < maxRetriesPerModel
+                        ) {
+
+                            const delay =
+                                attempt * 2000;
+
+                            console.log(
+                                `Retrying ${model} in ${
+                                    delay / 1000
+                                } seconds...`,
+                            );
+
+                            await new Promise(
+                                (resolve) =>
+                                    setTimeout(
+                                        resolve,
+                                        delay,
+                                    ),
+                            );
+
+                        }
+
                     }
-
-
-                    const delay =
-                        attempt * 2000;
-
-
-                    console.log(
-                        `Retrying Gemini in ${delay / 1000
-                        } seconds...`,
-                    );
-
-
-                    await new Promise(
-                        (resolve) =>
-                            setTimeout(resolve, delay),
-                    );
 
                 }
 
+                // Stop if Gemini succeeded.
+                if (response) {
+                    break;
+                }
+
+                console.log(
+                    `${model} unavailable. Trying next Gemini model...`,
+                );
             }
 
+            if (!response) {
+                throw lastError ||
+                    new Error(
+                        'All Gemini models failed.',
+                    );
+            }
 
             // =====================================
             // STEP 6: GET GEMINI RESPONSE
@@ -549,8 +1058,19 @@ Return exactly this structure:
             // STEP 7: PARSE JSON
             // =====================================
 
-            const result =
-                JSON.parse(responseText);
+            const result = JSON.parse(responseText);
+
+            result.recommendations =
+                result.recommendations.map(
+                    (recommendation: any) => ({
+                        ...recommendation,
+                        roadmap:
+                            addRequiredIbmCourseTasks(
+                                recommendation.roadmap || [],
+                                recommendation.career || '',
+                            ),
+                    }),
+                );
 
 
             // =====================================
@@ -668,79 +1188,209 @@ Return exactly this structure:
     }
 
 
-    // =====================================
-    // GET USER'S SELECTED ROADMAP
-    // =====================================
+    async submitGithubRepository(
+        userId: string,
+        phaseIndex: number,
+        taskIndex: number,
+        repositoryUrl: string,
+    ) {
+        let parsedUrl: URL;
 
-    async getMyRoadmap(userId: string) {
+        try {
+            parsedUrl = new URL(repositoryUrl);
+        } catch {
+            throw new BadRequestException(
+                'Enter a valid public GitHub repository URL.',
+            );
+        }
 
-        const career = await this.careerModel.findOne({
-            userId,
+        const pathParts = parsedUrl.pathname
+            .split('/')
+            .filter(Boolean);
+
+        if (
+            parsedUrl.hostname !== 'github.com' ||
+            pathParts.length !== 2
+        ) {
+            throw new BadRequestException(
+                'Use a public repository URL such as https://github.com/owner/repository.',
+            );
+        }
+
+        const career = await this.careerModel.findOne({ userId });
+        const roadmapPhase =
+            career?.selectedRoadmap?.roadmap?.[phaseIndex];
+
+        if (!roadmapPhase) {
+            throw new BadRequestException('Invalid roadmap phase.');
+        }
+
+        const task = roadmapPhase.tasks?.[taskIndex];
+
+        if (
+            !task ||
+            typeof task === 'string' ||
+            !['project', 'practice'].includes(task.type)
+        ) {
+            throw new BadRequestException(
+                'Select a project or practice task for GitHub verification.',
+            );
+        }
+
+        const [owner, repository] = pathParts;
+        const apiUrl =
+            `https://api.github.com/repos/${owner}/${repository}`;
+        const response = await fetch(apiUrl, {
+            headers: {
+                Accept: 'application/vnd.github+json',
+            },
         });
 
-
-        // User has no career data
-        if (!career) {
-
-            return {
-                message: 'No roadmap selected yet.',
-
-                selectedRoadmap: null,
-
-                selectedAt: null,
-
-                roadmapProgress: [],
-
-                totalPhases: 0,
-
-                completedPhases: 0,
-
-                progressPercentage: 0,
-            };
-
+        if (!response.ok) {
+            throw new BadRequestException(
+                'The GitHub repository could not be found or is not public.',
+            );
         }
 
+        const repo = await response.json() as {
+            full_name: string;
+            description: string | null;
+            html_url: string;
+            language: string | null;
+            topics?: string[];
+            default_branch: string;
+        };
 
-        // User has career data but has not selected a roadmap
-        if (!career.selectedRoadmap) {
+        let readme = '';
+        const readmeResponse = await fetch(`${apiUrl}/readme`, {
+            headers: { Accept: 'application/vnd.github+json' },
+        });
 
-            return {
-                message: 'No roadmap selected yet.',
-
-                selectedRoadmap: null,
-
-                selectedAt: null,
-
-                roadmapProgress: [],
-
-                totalPhases: 0,
-
-                completedPhases: 0,
-
-                progressPercentage: 0,
+        if (readmeResponse.ok) {
+            const readmeData = await readmeResponse.json() as {
+                content?: string;
             };
-
+            readme = Buffer.from(
+                readmeData.content || '',
+                'base64',
+            ).toString('utf8').slice(0, 50000);
         }
 
+        const treeResponse = await fetch(
+            `${apiUrl}/git/trees/${repo.default_branch}?recursive=1`,
+            { headers: { Accept: 'application/vnd.github+json' } },
+        );
+        const sourceFiles: { path: string; content: string }[] = [];
 
-        // =====================================
-        // ROADMAP EXISTS → CALCULATE PROGRESS
-        // =====================================
+        if (treeResponse.ok) {
+            const treeData = await treeResponse.json() as {
+                tree?: { path: string; type: string; size?: number }[];
+            };
+            const codeFiles = (treeData.tree || [])
+                .filter((file) =>
+                    file.type === 'blob' &&
+                    (file.size || 0) <= 50000 &&
+                    /(^|\/)(package\.json|README\.md)$|\.(ts|tsx|js|jsx|py|java|go|rb|php|html|css)$/i.test(file.path),
+                )
+                .slice(0, 12);
 
-        const totalPhases =
-            career.selectedRoadmap.roadmap?.length || 0;
+            for (const file of codeFiles) {
+                const fileResponse = await fetch(
+                    `https://raw.githubusercontent.com/${owner}/${repository}/${repo.default_branch}/${file.path}`,
+                );
 
+                if (fileResponse.ok) {
+                    sourceFiles.push({
+                        path: file.path,
+                        content: (await fileResponse.text()).slice(0, 8000),
+                    });
+                }
+            }
+        }
+
+        const repositoryEvidence = Buffer.from(
+            JSON.stringify(
+                {
+                    repository: repo.full_name,
+                    url: repo.html_url,
+                    description: repo.description,
+                    language: repo.language,
+                    topics: repo.topics || [],
+                    readme,
+                    sourceFiles,
+                },
+                null,
+                2,
+            ),
+            'utf8',
+        );
+
+        return this.initializePhaseVerification(
+            userId,
+            phaseIndex,
+            'github',
+            repositoryUrl,
+            {
+                buffer: repositoryEvidence,
+                originalname: `${owner}-${repository}.txt`,
+                mimetype: 'text/plain',
+                size: repositoryEvidence.length,
+            } as Express.Multer.File,
+            false,
+            taskIndex,
+            task.title,
+        );
+    }
+
+
+    private calculateRoadmapProgress(
+        career: CareerDocument,
+    ) {
+        const roadmap =
+            career.selectedRoadmap?.roadmap || [];
+
+        const progress =
+            career.roadmapProgress || [];
 
         const completedPhases =
-            (career.roadmapProgress || []).filter(
-                (item) => item.completed,
+            roadmap.filter(
+                (phase: any, phaseIndex: number) => {
+
+                    const tasks =
+                        phase.tasks || [];
+
+                    // A phase with no tasks cannot be completed.
+                    if (tasks.length === 0) {
+                        return false;
+                    }
+
+                    // Every task in the phase must be verified.
+                    return tasks.every(
+                        (
+                            _task: any,
+                            taskIndex: number,
+                        ) =>
+                            progress.some(
+                                (item) =>
+                                    item.phaseIndex ===
+                                        phaseIndex &&
+                                    item.taskIndex ===
+                                        taskIndex &&
+                                    item.completed === true,
+                            ),
+                    );
+                },
             ).length;
 
+        const totalPhases =
+            roadmap.length;
 
         const progressPercentage =
             totalPhases > 0
                 ? Math.round(
-                    (completedPhases / totalPhases) * 100,
+                    (completedPhases /
+                        totalPhases) *
+                        100,
                 )
                 : 0;
 
@@ -748,9 +1398,102 @@ Return exactly this structure:
             totalPhases > 0 &&
             completedPhases === totalPhases;
 
+        return {
+            totalPhases,
+            completedPhases,
+            progressPercentage,
+            roadmapCompleted,
+        };
+    }
+
+
+    // =====================================
+    // GET USER'S SELECTED ROADMAP
+    // =====================================
+
+    async getMyRoadmap(
+        userId: string,
+    ) {
+
+        const career =
+            await this.careerModel.findOne({
+                userId,
+            });
+
 
         // =====================================
-        // RETURN SELECTED ROADMAP + PROGRESS
+        // USER HAS NO CAREER DATA
+        // =====================================
+
+        if (!career) {
+
+            return {
+                message:
+                    'No roadmap selected yet.',
+
+                selectedRoadmap: null,
+
+                selectedAt: null,
+
+                roadmapProgress: [],
+
+                totalPhases: 0,
+
+                completedPhases: 0,
+
+                progressPercentage: 0,
+
+                roadmapCompleted: false,
+            };
+
+        }
+
+
+        // =====================================
+        // USER HAS NOT SELECTED A ROADMAP
+        // =====================================
+
+        if (!career.selectedRoadmap) {
+
+            return {
+                message:
+                    'No roadmap selected yet.',
+
+                selectedRoadmap: null,
+
+                selectedAt: null,
+
+                roadmapProgress: [],
+
+                totalPhases: 0,
+
+                completedPhases: 0,
+
+                progressPercentage: 0,
+
+                roadmapCompleted: false,
+            };
+
+        }
+
+
+        // =====================================
+        // CALCULATE TASK-BASED PROGRESS
+        // =====================================
+
+        const {
+            totalPhases,
+            completedPhases,
+            progressPercentage,
+            roadmapCompleted,
+        } =
+            this.calculateRoadmapProgress(
+                career,
+            );
+
+
+        // =====================================
+        // RETURN ROADMAP + PROGRESS
         // =====================================
 
         return {
@@ -776,7 +1519,6 @@ Return exactly this structure:
             roadmapCompleted,
 
         };
-
     }
 
 
@@ -787,10 +1529,15 @@ Return exactly this structure:
     async initializePhaseVerification(
         userId: string,
         phaseIndex: number,
-        evidenceType: 'certificate' | 'screenshot',
+        evidenceType: 'certificate' | 'screenshot' | 'github',
         evidenceFileName: string,
-        evidenceFilePath: string,
+        evidenceFile: Express.Multer.File,
+        verifyInBackground = false,
+        taskIndex: number | null = null,
+        taskTitle: string | null = null,
     ) {
+        // Evidence is intentionally held only in memory for this request.
+        const evidenceFilePath = null;
         const career =
             await this.careerModel.findOne({
                 userId,
@@ -831,7 +1578,8 @@ Return exactly this structure:
         const existingProgress =
             career.roadmapProgress.find(
                 (item) =>
-                    item.phaseIndex === phaseIndex,
+                    item.phaseIndex === phaseIndex &&
+                    (item.taskIndex ?? null) === taskIndex,
             );
 
         if (existingProgress?.completed) {
@@ -854,12 +1602,48 @@ Return exactly this structure:
             );
         }
 
+        const task =
+            taskIndex !== null
+                ? roadmapPhase.tasks?.[taskIndex]
+                : null;
+
+        if (!task) {
+            throw new BadRequestException(
+                'Roadmap task not found.',
+            );
+        }
+
+        if (
+            evidenceType === 'github' &&
+            !['project', 'practice'].includes(task.type)
+        ) {
+            throw new BadRequestException(
+                'GitHub evidence can only be submitted for project or practice tasks.',
+            );
+        }
+
+        if (
+            evidenceType !== 'github' &&
+            task.type !== 'certificate'
+        ) {
+            throw new BadRequestException(
+                'Certificate or screenshot evidence can only be submitted for certificate tasks.',
+            );
+        }
+
+        const resolvedTaskTitle =
+            task.title ?? taskTitle ?? null;
+
         // =====================================
         // SAVE EVIDENCE AS PENDING
         // =====================================
 
         const progressData = {
             phaseIndex,
+
+            taskIndex,
+
+            taskTitle: resolvedTaskTitle,
 
             completed: false,
 
@@ -880,7 +1664,8 @@ Return exactly this structure:
         const existingProgressIndex =
             career.roadmapProgress.findIndex(
                 (item) =>
-                    item.phaseIndex === phaseIndex,
+                    item.phaseIndex === phaseIndex &&
+                    (item.taskIndex ?? null) === taskIndex,
             );
 
         if (existingProgressIndex >= 0) {
@@ -899,19 +1684,45 @@ Return exactly this structure:
 
         await career.save();
 
+        if (!verifyInBackground) {
+            void this.initializePhaseVerification(
+                userId,
+                phaseIndex,
+                evidenceType,
+                evidenceFileName,
+                evidenceFile,
+                true,
+                taskIndex,
+                taskTitle,
+            ).catch((error) => {
+                console.error(
+                    'Roadmap evidence background verification error:',
+                    error,
+                );
+            });
+
+            return {
+                message:
+                    'Evidence submitted. Verification is in progress.',
+                phaseIndex,
+                verificationStatus: 'pending',
+                completed: false,
+            };
+        }
+
         // =====================================
         // VERIFY WITH GEMINI
         // =====================================
 
         try {
-
             const verificationResult =
                 await this.verifyRoadmapEvidence(
                     userId,
                     roadmapPhase,
+                    task,
                     evidenceType,
                     evidenceFileName,
-                    evidenceFilePath,
+                    evidenceFile,
                 );
 
             // =====================================
@@ -921,7 +1732,8 @@ Return exactly this structure:
             const progressIndex =
                 career.roadmapProgress.findIndex(
                     (item) =>
-                        item.phaseIndex === phaseIndex,
+                        item.phaseIndex === phaseIndex &&
+                        (item.taskIndex ?? null) === taskIndex,
                 );
 
             if (progressIndex === -1) {
@@ -941,9 +1753,13 @@ Return exactly this structure:
                 career.roadmapProgress[
                     progressIndex
                 ] = {
-                    phaseIndex,
+                phaseIndex,
 
-                    completed: true,
+                taskIndex,
+
+                taskTitle: resolvedTaskTitle,
+
+                completed: true,
 
                     completedAt:
                         new Date(),
@@ -1015,26 +1831,12 @@ Return exactly this structure:
                 // CALCULATE PROGRESS
                 // =====================================
 
-                const completedPhases =
-                    career.roadmapProgress.filter(
-                        (item) =>
-                            item.completed,
-                    ).length;
-
-                const progressPercentage =
-                    totalPhases > 0
-                        ? Math.round(
-                            (completedPhases /
-                                totalPhases) *
-                            100,
-                        )
-                        : 0;
-
-                const roadmapCompleted =
-                    totalPhases > 0 &&
-                    completedPhases ===
-                    totalPhases;
-
+                const {
+                    totalPhases,
+                    completedPhases,
+                    progressPercentage,
+                    roadmapCompleted,
+                } = this.calculateRoadmapProgress(career);
                 return {
                     message:
                         roadmapCompleted
@@ -1071,6 +1873,10 @@ Return exactly this structure:
                 progressIndex
             ] = {
                 phaseIndex,
+
+                taskIndex,
+
+                taskTitle: resolvedTaskTitle,
 
                 completed: false,
 
@@ -1134,9 +1940,10 @@ Return exactly this structure:
 
             // Keep evidence pending if Gemini itself failed.
             const progressIndex =
-                career.roadmapProgress.findIndex(
-                    (item) =>
-                        item.phaseIndex === phaseIndex,
+            career.roadmapProgress.findIndex(
+                (item) =>
+                    item.phaseIndex === phaseIndex &&
+                    (item.taskIndex ?? null) === taskIndex,
                 );
 
             if (progressIndex >= 0) {
@@ -1145,6 +1952,10 @@ Return exactly this structure:
                     progressIndex
                 ] = {
                     phaseIndex,
+
+                    taskIndex,
+
+                    taskTitle: resolvedTaskTitle,
 
                     completed: false,
 
@@ -1182,11 +1993,13 @@ Return exactly this structure:
     private async verifyRoadmapEvidence(
         userId: string,
         roadmapPhase: any,
+        task: any,
         evidenceType:
             | 'certificate'
-            | 'screenshot',
+            | 'screenshot'
+            | 'github',
         evidenceFileName: string,
-        evidenceFilePath: string,
+        evidenceFile: Express.Multer.File,
     ) {
         // =====================================
         // GET USER PROFILE
@@ -1207,9 +2020,6 @@ Return exactly this structure:
         // CHECK FILE
         // =====================================
 
-        const absoluteFilePath =
-            path.resolve(evidenceFilePath);
-
         // =====================================
         // DETERMINE MIME TYPE
         // =====================================
@@ -1221,7 +2031,9 @@ Return exactly this structure:
 
         let mimeType = '';
 
-        if (extension === '.pdf') {
+        if (evidenceType === 'github') {
+            mimeType = 'text/plain';
+        } else if (extension === '.pdf') {
             mimeType =
                 'application/pdf';
         } else if (
@@ -1245,9 +2057,21 @@ Return exactly this structure:
         // UPLOAD FILE TO GEMINI
         // =====================================
 
+        const evidenceBytes =
+            evidenceFile.buffer.buffer.slice(
+                evidenceFile.buffer.byteOffset,
+                evidenceFile.buffer.byteOffset +
+                    evidenceFile.buffer.byteLength,
+            ) as ArrayBuffer;
+
+        const evidenceBlob = new Blob(
+            [evidenceBytes],
+            { type: mimeType },
+        );
+
         const uploadedFile =
             await this.gemini.files.upload({
-                file: absoluteFilePath,
+                file: evidenceBlob,
                 config: {
                     mimeType,
                 },
@@ -1271,10 +2095,13 @@ Return exactly this structure:
 You are an evidence verification system
 for a learning roadmap.
 
-Your job is to determine whether the uploaded
-certificate or screenshot provides reasonable
-evidence that the learner completed the requested
-roadmap phase.
+Your job is to determine whether the submitted
+evidence provides reasonable evidence that the
+learner completed the specific roadmap task.
+
+The roadmap phase is provided as context, but
+the verification decision must be based primarily
+on the specific task being submitted.
 
 IMPORTANT:
 
@@ -1285,7 +2112,12 @@ You are only determining whether the visible
 information provides sufficient evidence of
 completion.
 
-The evidence may be a certificate or screenshot.
+The evidence may be a certificate, screenshot,
+or public GitHub repository summary.
+
+For GitHub evidence, evaluate the repository
+content, README, source code, and project structure
+against the specific task requirements.
 
 =================================
 LEARNER INFORMATION
@@ -1319,6 +2151,25 @@ ${JSON.stringify(
         )}
 
 =================================
+SPECIFIC TASK BEING VERIFIED
+=================================
+
+Task title:
+${task.title || 'Not provided'}
+
+Task type:
+${task.type || 'Not provided'}
+
+Task details:
+${JSON.stringify(task, null, 2)}
+
+The evidence must provide reasonable support that
+this specific task was completed.
+
+Do not consider the entire roadmap phase completed
+just because the evidence is related to the phase.
+
+=================================
 EVIDENCE INFORMATION
 =================================
 
@@ -1336,11 +2187,11 @@ Analyze the uploaded evidence carefully.
 
 Check:
 
-1. Does the document/screenshot appear to be
-   related to learning or course completion?
+1. Does the submitted evidence appear related to
+   learning, course completion, or the requested project/practice work?
 
 2. Does it indicate that the learner completed
-   or passed something?
+   or implemented something relevant?
 
 3. Is there a learner name visible?
 
@@ -1348,19 +2199,21 @@ Check:
 
 5. Is there a platform/provider visible?
 
-6. Does the course or evidence reasonably relate
-   to the roadmap phase?
+6. Does the evidence reasonably relate to the
+   specific roadmap task?
 
-7. Are the required skills reasonably related
-   to the evidence?
+7. Does the evidence demonstrate the skills,
+   activity, project, or learning outcome expected
+   by the specific task?
 
-8. Is there enough visible information to support
-   completion?
+8. Is there enough information to support completion
+   of this specific task?
 
-9. If the evidence is clearly unrelated, reject it.
+9. If the evidence is clearly unrelated to the
+   specific task, reject it.
 
-10. If the evidence does not indicate completion,
-    reject it.
+10. If the evidence does not indicate completion
+    of the specific task, reject it.
 
 11. Do not reject simply because the certificate
     does not contain every required skill.
@@ -1373,8 +2226,11 @@ VERIFICATION DECISION
 =================================
 
 Set "verified" to true only when the evidence
-provides reasonable evidence of completion of
-the roadmap phase.
+provides reasonable evidence that the specific
+roadmap task was completed.
+
+Do not mark the task as verified merely because
+the evidence is related to the roadmap phase.
 
 Otherwise set "verified" to false.
 

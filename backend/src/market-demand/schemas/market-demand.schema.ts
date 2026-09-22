@@ -71,7 +71,19 @@ export class MarketDemand {
                         description: String,
                         estimatedDuration: String,
                         weeklyHours: Number,
-                        tasks: [String],
+                        tasks: [
+                            {
+                                title: String,
+                                type: {
+                                    type: String,
+                                    enum: ['certificate', 'project', 'practice'],
+                                },
+                                resourceUrl: {
+                                    type: String,
+                                    default: null,
+                                },
+                            },
+                        ],
                     },
                 ],
 
@@ -121,7 +133,12 @@ export class MarketDemand {
             description: string;
             estimatedDuration: string;
             weeklyHours: number;
-            tasks: string[];
+
+            tasks: {
+                title: string;
+                type: 'certificate' | 'project' | 'practice';
+                resourceUrl?: string | null;
+            }[];
         }[];
 
         aiInsight: string;
