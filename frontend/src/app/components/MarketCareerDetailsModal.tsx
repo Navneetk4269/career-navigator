@@ -30,7 +30,11 @@ type MarketCareer = {
         description: string;
         estimatedDuration: string;
         weeklyHours: number;
-        tasks: string[];
+        tasks: {
+            title: string;
+            type: "certificate" | "project" | "practice";
+            resourceUrl?: string | null;
+        }[];
     }[];
     aiInsight?: string;
 };
@@ -536,7 +540,26 @@ export default function MarketCareerDetailsModal({
                                                                     <span className="mt-1 text-orange-500">
                                                                         •
                                                                     </span>
-                                                                    {task}
+                                                                     <div>
+                                                                        <p className="font-medium text-slate-700">
+                                                                            {task.title}
+                                                                        </p>
+
+                                                                        <p className="mt-1 text-xs font-semibold uppercase text-slate-400">
+                                                                            {task.type}
+                                                                        </p>
+
+                                                                        {task.resourceUrl && (
+                                                                            <a
+                                                                                href={task.resourceUrl}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="mt-1 inline-block text-xs font-bold text-blue-600 hover:underline"
+                                                                            >
+                                                                                Open Course →
+                                                                            </a>
+                                                                        )}
+                                                                    </div>
                                                                 </li>
                                                             )
                                                         )}

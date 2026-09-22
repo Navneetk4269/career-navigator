@@ -12,6 +12,8 @@ import {
   ProfileSchema,
 } from '../profiles/schemas/profile.schema';
 
+import { Career, CareerSchema } from '../careers/schemas/career.schema';
+
 import { MarketDemandController } from './market-demand.controller';
 
 import { MarketDemandService } from './market-demand.service';
@@ -19,23 +21,12 @@ import { MarketDemandService } from './market-demand.service';
 @Module({
   imports: [
     MongooseModule.forFeature([
-      {
-        name: MarketDemand.name,
-        schema: MarketDemandSchema,
-      },
-      {
-        name: Profile.name,
-        schema: ProfileSchema,
-      },
+      { name: MarketDemand.name, schema: MarketDemandSchema },
+      { name: Profile.name, schema: ProfileSchema },
+      { name: Career.name, schema: CareerSchema },
     ]),
   ],
-
-  controllers: [
-    MarketDemandController,
-  ],
-
-  providers: [
-    MarketDemandService,
-  ],
+  controllers: [MarketDemandController],
+  providers: [MarketDemandService],
 })
-export class MarketDemandModule { }
+export class MarketDemandModule {}

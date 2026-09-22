@@ -40,7 +40,25 @@ export class Career {
                         description: String,
                         estimatedDuration: String,
                         weeklyHours: Number,
-                        tasks: [String],
+                        tasks: [
+                            {
+                                title: String,
+
+                                type: {
+                                    type: String,
+                                    enum: [
+                                        'certificate',
+                                        'project',
+                                        'practice',
+                                    ],
+                                },
+
+                                resourceUrl: {
+                                    type: String,
+                                    default: null,
+                                },
+                            },
+                        ],
                     },
                 ],
             },
@@ -67,7 +85,11 @@ export class Career {
             description: string;
             estimatedDuration: string;
             weeklyHours: number;
-            tasks: string[];
+            tasks: {
+                title: string;
+                type: 'certificate' | 'project' | 'practice';
+                resourceUrl?: string;
+            }[];
         }[];
     }[];
 
@@ -106,6 +128,16 @@ export class Career {
                     required: true,
                 },
 
+                taskIndex: {
+                    type: Number,
+                    default: null,
+                },
+
+                taskTitle: {
+                    type: String,
+                    default: null,
+                },
+
                 completed: {
                     type: Boolean,
                     default: false,
@@ -136,6 +168,7 @@ export class Career {
                     enum: [
                         'certificate',
                         'screenshot',
+                        'github',
                     ],
                     default: null,
                 },
@@ -161,6 +194,10 @@ export class Career {
     roadmapProgress!: {
         phaseIndex: number;
 
+        taskIndex: number | null;
+
+        taskTitle: string | null;
+
         completed: boolean;
 
         completedAt: Date | null;
@@ -174,6 +211,7 @@ export class Career {
         evidenceType:
             | 'certificate'
             | 'screenshot'
+            | 'github'
             | null;
 
         evidenceFileName: string | null;
