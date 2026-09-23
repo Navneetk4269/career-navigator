@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { usePopup } from "../components/PopupProvider";
+import LogoutButton from "../components/LogoutButton";
 
 export default function Profile() {
   const { showPopup } = usePopup();
@@ -431,7 +432,7 @@ export default function Profile() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24">
+    <main className="relative min-h-screen overflow-hidden pt-[76px] bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24">
 
       {/* Background glow */}
       <div className="pointer-events-none absolute left-0 top-0 h-[560px] w-[560px] rounded-full bg-orange-200/40 blur-3xl" />
@@ -450,7 +451,7 @@ export default function Profile() {
       />
 
       {/* ================= NAVBAR ================= */}
-      <nav className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">
 
           <Link
@@ -556,6 +557,10 @@ export default function Profile() {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/20">
               {name ? name.charAt(0).toUpperCase() : "?"}
             </div>
+
+            <div className="mx-1 hidden h-7 w-px bg-slate-200 lg:block" />
+
+            <LogoutButton />
 
           </div>
 

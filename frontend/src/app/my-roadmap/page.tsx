@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import RoadmapProgress from "../components/RoadmapProgress";
+import LogoutButton from "../components/LogoutButton";
 
 
 interface RoadmapPhase {
@@ -558,6 +559,8 @@ export default function MyRoadmapPage() {
                                 Profile
                             </Link>
 
+                            <LogoutButton />
+
                         </div>
 
                     </div>
@@ -697,6 +700,8 @@ export default function MyRoadmapPage() {
                                 Profile
                             </Link>
 
+                            <LogoutButton />
+
                         </div>
 
                     </div>
@@ -765,7 +770,7 @@ export default function MyRoadmapPage() {
 
             {/* ================= NAVBAR ================= */}
 
-            <nav className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
+            <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
 
                 <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">
 
@@ -879,6 +884,10 @@ export default function MyRoadmapPage() {
                         >
                             Profile
                         </Link>
+
+                        <div className="mx-1 hidden h-7 w-px bg-slate-200 lg:block" />
+
+                        <LogoutButton />
 
                     </div>
 
