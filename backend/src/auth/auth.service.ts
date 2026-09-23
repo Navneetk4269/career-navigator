@@ -11,6 +11,8 @@ import { UsersService } from '../users/users.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 
+import { AchievementsService } from '../achievements/achievements.service';
+
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -19,6 +21,8 @@ export class AuthService {
         private readonly usersService: UsersService,
 
         private readonly jwtService: JwtService,
+
+        private readonly achievementsService: AchievementsService,
     ) { }
 
     async signup(signupDto: SignupDto) {
@@ -82,6 +86,12 @@ export class AuthService {
                 'Invalid email or password',
             );
         }
+
+        const newlyUnlocked =
+            await this.achievementsService.processLogin(
+                user,
+            );
+
         const token =
             await this.jwtService.signAsync({
                 sub: user._id.toString(),
@@ -100,6 +110,8 @@ export class AuthService {
                 profileCompleted:
                     user.profileCompleted,
             },
+
+            achievementsUnlocked: newlyUnlocked,
         };
     }
 }

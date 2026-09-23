@@ -37,6 +37,16 @@ export default function Login() {
         return;
       }
 
+      if (
+          data?.achievementsUnlocked &&
+          data.achievementsUnlocked.length > 0
+      ) {
+          sessionStorage.setItem(
+              "newAchievements",
+              JSON.stringify(data.achievementsUnlocked)
+          );
+      }
+
       // Save login information
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("user", JSON.stringify(data.user));

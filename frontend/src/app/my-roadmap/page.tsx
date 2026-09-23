@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import RoadmapProgress from "../components/RoadmapProgress";
 import LogoutButton from "../components/LogoutButton";
+import MsgPopup from "../components/msgpopup";
 
 
 interface RoadmapPhase {
@@ -78,7 +79,18 @@ interface MyRoadmapData {
     progressPercentage: number;
 
     roadmapCompleted: boolean;
+
+    achievements: Achievement[];
 }
+
+type Achievement = {
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    unlocked: boolean;
+    unlockedAt: string | null;
+};
 
 
 export default function MyRoadmapPage() {
@@ -102,6 +114,10 @@ export default function MyRoadmapPage() {
     const [uploadingProof, setUploadingProof] = useState(false);
     const [proofMessage, setProofMessage] = useState("");
     const [proofError, setProofError] = useState("");
+
+    const [achievementPopup, setAchievementPopup] =
+    useState<Achievement | null>(null);
+    const knownAchievementIds = useRef<Set<string> | null>(null);
 
     const selectedPhase =
         selectedPhaseIndex === null
@@ -144,10 +160,38 @@ export default function MyRoadmapPage() {
             }
 
 
-            const data =
-                await response.json();
+            const data = await response.json();
 
             setRoadmapData(data);
+
+            const currentAchievements: Achievement[] =
+                data?.achievements || [];
+
+            if (knownAchievementIds.current === null) {
+                // First fetch: establish the baseline.
+                // Don't show old achievements as new.
+                knownAchievementIds.current = new Set(
+                    currentAchievements.map(
+                        (achievement) => achievement.id
+                    )
+                );
+            } else {
+                const newAchievement =
+                    currentAchievements.find(
+                        (achievement) =>
+                            !knownAchievementIds.current!.has(
+                                achievement.id
+                            )
+                    );
+
+                if (newAchievement) {
+                    setAchievementPopup(newAchievement);
+
+                    knownAchievementIds.current.add(
+                        newAchievement.id
+                    );
+                }
+            }
 
         } catch (error) {
 
@@ -304,6 +348,15 @@ export default function MyRoadmapPage() {
                 throw new Error(
                     data.message ||
                     "Failed to submit completion proof.",
+                );
+            }
+
+            if (
+                data?.achievementsUnlocked &&
+                data.achievementsUnlocked.length > 0
+            ) {
+                setAchievementPopup(
+                    data.achievementsUnlocked[0]
                 );
             }
 
@@ -1303,6 +1356,15 @@ export default function MyRoadmapPage() {
                     </div>
 
                 </div>
+
+                {achievementPopup && (
+                    <MsgPopup
+                        message={`🎉 Achievement Unlocked: ${achievementPopup.icon} ${achievementPopup.title}`}
+                        type="success"
+                        duration={5000}
+                        onClose={() => setAchievementPopup(null)}
+                    />
+                )}
 
             </main>
 

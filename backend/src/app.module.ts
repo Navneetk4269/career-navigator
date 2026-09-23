@@ -7,6 +7,7 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { JobAnalysisModule } from './job-analysis/job-analysis.module';
 import { CareersModule } from './careers/careers.module';
 import { MarketDemandModule } from './market-demand/market-demand.module';
+import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
@@ -35,6 +36,8 @@ import { MarketDemandModule } from './market-demand/market-demand.module';
     CareersModule,
 
     MarketDemandModule,
+
+    AchievementsModule,
 
   ],
   controllers: [],

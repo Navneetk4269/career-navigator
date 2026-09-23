@@ -14,6 +14,12 @@ import {
 import { CareersController } from './careers.controller';
 import { CareersService } from './careers.service';
 
+import { AchievementsModule } from '../achievements/achievements.module';
+import {
+    User,
+    UserSchema,
+} from '../users/schemas/user.schema';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -25,7 +31,12 @@ import { CareersService } from './careers.service';
         name: Profile.name,
         schema: ProfileSchema,
       },
+      {
+          name: User.name,
+          schema: UserSchema,
+      },
     ]),
+    AchievementsModule,
   ],
 
   controllers: [
