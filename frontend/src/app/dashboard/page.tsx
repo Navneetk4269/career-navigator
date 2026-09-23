@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import LogoutButton from "../components/LogoutButton";
+import MsgPopup from "../components/msgpopup";
 
 type SkillGap = {
   skill: string;
@@ -98,6 +99,15 @@ type MarketCareerDetailsModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSelected?: () => void | Promise<void>;
+};
+
+type Achievement = {
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    unlocked: boolean;
+    unlockedAt: string | null;
 };
 
 function MarketCareerDetailsModal({
@@ -670,8 +680,41 @@ export default function Dashboard() {
   const [selectedMarketCareer, setSelectedMarketCareer] =
     useState<MarketCareer | null>(null);
 
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [loginStreak, setLoginStreak] = useState(0);
+  const [achievementPopup, setAchievementPopup] =
+    useState<Achievement | null>(null);
+
   useEffect(() => {
-    loadDashboard();
+      loadDashboard();
+
+      const storedAchievements =
+          sessionStorage.getItem("newAchievements");
+
+      if (storedAchievements) {
+          try {
+              const parsedAchievements =
+                  JSON.parse(storedAchievements);
+
+              if (
+                  Array.isArray(parsedAchievements) &&
+                  parsedAchievements.length > 0
+              ) {
+                  setAchievementPopup(
+                      parsedAchievements[0]
+                  );
+              }
+          } catch (error) {
+              console.error(
+                  "Failed to read achievement popup:",
+                  error
+              );
+          }
+
+          sessionStorage.removeItem(
+              "newAchievements"
+          );
+      }
   }, []);
 
   async function loadDashboard() {
@@ -797,6 +840,41 @@ export default function Dashboard() {
         setMarketDemand(
           normalizedMarketDemand
         );
+      }
+
+      /*
+      * ================================
+      * GET ACHIEVEMENTS
+      * ================================
+      */
+
+      const achievementsResponse =
+          await fetch(
+              "http://localhost:5000/achievements/me",
+              {
+                  headers: {
+                      Authorization:
+                          `Bearer ${token}`,
+                  },
+              }
+          );
+
+      const achievementsText =
+          await achievementsResponse.text();
+
+      const achievementsData =
+          achievementsText
+              ? JSON.parse(achievementsText)
+              : null;
+
+      if (achievementsResponse.ok) {
+          setAchievements(
+              achievementsData?.achievements || []
+          );
+
+          setLoginStreak(
+              achievementsData?.loginStreak || 0
+          );
       }
 
     } catch (error) {
@@ -1843,6 +1921,121 @@ export default function Dashboard() {
         </div>
 
 
+        {/* ====================================================== */}
+        {/* ================= ACHIEVEMENTS ======================= */}
+        {/* ====================================================== */}
+
+        <div className="group relative mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/10">
+
+          {/* Background glow */}
+          <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-orange-100/50 blur-3xl transition group-hover:bg-orange-200/60" />
+
+          {/* Header */}
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+            <div>
+              <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500">
+                <span className="text-lg">🏆</span>
+                Achievements
+              </p>
+
+              <h2 className="mt-1 text-xl font-black text-slate-950">
+                Your milestones
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Keep progressing to unlock new achievements.
+              </p>
+            </div>
+
+            {/* Login streak */}
+            <div className="flex items-center gap-3 rounded-2xl border border-orange-100 bg-orange-50 px-5 py-3">
+              <span className="text-2xl">🔥</span>
+
+              <div>
+                <p className="text-xl font-black text-orange-500">
+                  {loginStreak}
+                </p>
+
+                <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600">
+                  Day Streak
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Achievement list */}
+          <div className="relative mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+
+            {achievements.map((achievement) => (
+
+              <div
+                key={achievement.id}
+                className={`rounded-2xl border p-4 transition ${
+                  achievement.unlocked
+                    ? "border-orange-100 bg-orange-50/50"
+                    : "border-slate-100 bg-slate-50/50 opacity-60"
+                }`}
+              >
+
+                <div className="flex items-start gap-4">
+
+                  {/* Icon */}
+                  <div
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl ${
+                      achievement.unlocked
+                        ? "bg-white shadow-sm"
+                        : "bg-slate-100 grayscale"
+                    }`}
+                  >
+                    {achievement.icon}
+                  </div>
+
+                  {/* Content */}
+                  <div className="min-w-0">
+
+                    <div className="flex items-center gap-2">
+
+                      <h3 className="text-sm font-black text-slate-900">
+                        {achievement.title}
+                      </h3>
+
+                      {achievement.unlocked && (
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-black uppercase text-green-600">
+                          Unlocked
+                        </span>
+                      )}
+
+                    </div>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {achievement.description}
+                    </p>
+
+                    {achievement.unlocked &&
+                      achievement.unlockedAt && (
+                        <p className="mt-2 text-[10px] font-semibold text-orange-500">
+                          Unlocked{" "}
+                          {new Date(
+                            achievement.unlockedAt
+                          ).toLocaleDateString()}
+                        </p>
+                    )}
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </div>
+
+
         {/* ================= LEARNING HOURS ================= */}
 
         <div className="group relative mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
@@ -2058,6 +2251,15 @@ export default function Dashboard() {
           await loadDashboard();
         }}
       />
+
+      {achievementPopup && (
+          <MsgPopup
+              message={`🎉 Achievement Unlocked: ${achievementPopup.icon} ${achievementPopup.title}`}
+              type="success"
+              duration={5000}
+              onClose={() => setAchievementPopup(null)}
+          />
+      )}
 
     </main>
   );

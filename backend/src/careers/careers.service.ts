@@ -21,6 +21,13 @@ import {
     ProfileDocument,
 } from '../profiles/schemas/profile.schema';
 
+import {
+    User,
+    UserDocument,
+} from '../users/schemas/user.schema';
+
+import { AchievementsService } from '../achievements/achievements.service';
+
 import * as path from 'path';
 
 // ============================================================
@@ -354,6 +361,11 @@ export class CareersService {
 
         @InjectModel(Profile.name)
         private readonly profileModel: Model<ProfileDocument>,
+
+        @InjectModel(User.name)
+        private readonly userModel: Model<UserDocument>,
+
+        private readonly achievementsService: AchievementsService,
 
     ) {
 
@@ -1420,6 +1432,9 @@ Return exactly this structure:
                 userId,
             });
 
+        const user =
+            await this.userModel.findById(userId);
+
 
         // =====================================
         // USER HAS NO CAREER DATA
@@ -1444,6 +1459,8 @@ Return exactly this structure:
                 progressPercentage: 0,
 
                 roadmapCompleted: false,
+
+                achievements: user?.achievements || [],
             };
 
         }
@@ -1472,6 +1489,8 @@ Return exactly this structure:
                 progressPercentage: 0,
 
                 roadmapCompleted: false,
+
+                achievements: user?.achievements || [],
             };
 
         }
@@ -1517,6 +1536,8 @@ Return exactly this structure:
             progressPercentage,
 
             roadmapCompleted,
+
+            achievements: user?.achievements || [],
 
         };
     }
@@ -1796,7 +1817,12 @@ Return exactly this structure:
                             verificationResult.reason,
                     },
                 };
+                await career.save();
 
+                const newlyUnlocked =
+                    await this.achievementsService.processRoadmapCompletion(
+                        userId,
+                    );
                 // =====================================
                 // ADD VERIFIED PHASE SKILLS
                 // TO USER PROFILE
@@ -1862,6 +1888,8 @@ Return exactly this structure:
 
                     updatedSkills:
                         profile.skills,
+
+                    achievementsUnlocked: newlyUnlocked,
                 };
             }
 
