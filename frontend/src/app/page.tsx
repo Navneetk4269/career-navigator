@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePopup } from "./components/PopupProvider";
+import LogoutButton from "./components/LogoutButton";
 
 export default function Home() {
   const { showPopup } = usePopup();
@@ -29,7 +30,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f8fafc] text-slate-900">
+    <main className="min-h-screen overflow-hidden bg-[#f8fafc] pt-[76px] text-slate-900">
 
       {/* ================= BACKGROUND ================= */}
 
@@ -44,7 +45,7 @@ export default function Home() {
 
       {/* ================= NAVBAR ================= */}
 
-      <nav className="relative z-30 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/70 bg-white/80 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-6">
 
           {/* ================= LOGO ================= */}
@@ -202,51 +203,8 @@ export default function Home() {
 
                 <div className="mx-1 hidden h-7 w-px bg-slate-200 lg:block" />
 
-
-                {/* Logout */}
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  title="Logout"
-                  className="group hidden items-center gap-2 rounded-xl border border-transparent px-3.5 py-2.5 text-sm font-semibold text-slate-500 transition-all duration-200 hover:border-red-100 hover:bg-red-50 hover:text-red-600 md:flex"
-                >
-
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="h-[18px] w-[18px] transition-transform duration-200 group-hover:translate-x-0.5"
-                  >
-
-                    <path
-                      d="M10 17l5-5-5-5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-
-                    <path
-                      d="M15 12H3"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-
-                    <path
-                      d="M14 5V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-
-                  </svg>
-
-                  <span>
-                    Logout
-                  </span>
-
-                </button>
+                
+                <LogoutButton />
 
               </>
             )}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import MarketCareerDetailsModal from "../components/MarketCareerDetailsModal";
+import LogoutButton from "../components/LogoutButton";
 
 
 type CareerRoadmapModalProps = {
@@ -1050,6 +1051,10 @@ export default function Explorer() {
             >
               Profile
             </Link>
+
+            <div className="mx-1 hidden h-7 w-px bg-slate-200 lg:block" />
+
+            <LogoutButton />
 
           </div>
 
