@@ -112,7 +112,7 @@ function CareerRoadmapModal({
       );
 
       const response = await fetch(
-        "http://localhost:5000/careers/select-roadmap",
+        "/api/careers/select-roadmap",
         {
           method: "PATCH",
           headers: {
@@ -590,7 +590,7 @@ export default function Explorer() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/careers/latest",
+        "/api/careers/latest",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -623,7 +623,7 @@ export default function Explorer() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/careers/recommend",
+        "/api/careers/recommend",
         {
           method: "POST",
           headers: {
@@ -661,7 +661,7 @@ export default function Explorer() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/market-demand/generate",
+        "/api/market-demand/generate",
         {
           method: "POST",
           headers: {
@@ -705,7 +705,7 @@ export default function Explorer() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/market-demand/latest",
+        "/api/market-demand/latest",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -741,7 +741,7 @@ export default function Explorer() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/job-analysis/analyze",
+        "/api/job-analysis/analyze",
         {
           method: "POST",
           headers: {
@@ -876,7 +876,7 @@ export default function Explorer() {
       );
 
       const response = await fetch(
-        "http://localhost:5000/careers/select-roadmap",
+        "/api/careers/select-roadmap",
         {
           method: "PATCH",
           headers: {

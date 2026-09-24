@@ -172,7 +172,7 @@ function MarketCareerDetailsModal({
       };
 
       const response = await fetch(
-        "http://localhost:5000/careers/select-roadmap",
+        "/api/careers/select-roadmap",
         {
           method: "PATCH",
           headers: {
@@ -749,7 +749,7 @@ export default function Dashboard() {
 
       const roadmapResponse =
         await fetch(
-          "http://localhost:5000/careers/my-roadmap",
+          "/api/careers/my-roadmap",
           {
             headers: {
               Authorization:
@@ -779,7 +779,7 @@ export default function Dashboard() {
 
       const recommendationResponse =
         await fetch(
-          "http://localhost:5000/careers/latest",
+          "/api/careers/latest",
           {
             headers: {
               Authorization:
@@ -814,7 +814,7 @@ export default function Dashboard() {
 
       const marketDemandResponse =
         await fetch(
-          "http://localhost:5000/market-demand/latest",
+          "/api/market-demand/latest",
           {
             headers: {
               Authorization:
@@ -850,7 +850,7 @@ export default function Dashboard() {
 
       const achievementsResponse =
           await fetch(
-              "http://localhost:5000/achievements/me",
+              "/api/achievements/me",
               {
                   headers: {
                       Authorization:

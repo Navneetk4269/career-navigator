@@ -144,7 +144,7 @@ export default function MyRoadmapPage() {
 
 
             const response = await fetch(
-                "http://localhost:5000/careers/my-roadmap",
+                "/api/careers/my-roadmap",
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -272,7 +272,7 @@ export default function MyRoadmapPage() {
 
             if (evidenceType === "github") {
                 const response = await fetch(
-                    "http://localhost:5000/careers/roadmap-github-repo",
+                    "/api/careers/roadmap-github-repo",
                     {
                         method: "POST",
                         headers: {
@@ -330,7 +330,7 @@ export default function MyRoadmapPage() {
             );
 
             const response = await fetch(
-                "http://localhost:5000/careers/roadmap-proof",
+                    "/api/careers/roadmap-proof",
                 {
                     method: "POST",
 

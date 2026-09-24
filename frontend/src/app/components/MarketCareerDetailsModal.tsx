@@ -108,7 +108,7 @@ export default function MarketCareerDetailsModal({
             };
 
             const response = await fetch(
-                "http://localhost:5000/careers/select-roadmap",
+                "/api/careers/select-roadmap",
                 {
                     method: "PATCH",
                     headers: {

@@ -63,7 +63,7 @@ export default function Profile() {
 
       // Load saved profile from backend
       try {
-        const response = await fetch("http://localhost:5000/profiles/me", {
+        const response = await fetch("/api/profiles/me", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -201,7 +201,7 @@ export default function Profile() {
     try {
 
       const response = await fetch(
-        "http://localhost:5000/profiles/github/sync",
+        "/api/profiles/github/sync",
         {
           method: "POST",
 
@@ -296,7 +296,7 @@ export default function Profile() {
       );
 
       const response = await fetch(
-        "http://localhost:5000/profiles/resume/extract",
+        "/api/profiles/resume/extract",
         {
           method: "POST",
 
@@ -387,7 +387,7 @@ export default function Profile() {
     setSaving(true);
 
     try {
-      const response = await fetch("http://localhost:5000/profiles", {
+      const response = await fetch("/api/profiles", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
