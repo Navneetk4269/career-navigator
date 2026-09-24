@@ -6,17 +6,26 @@
     },
     "backend": {
       "root": "backend/",
-      "entrypoint": "src/main.ts"
+      "framework": "nestjs",
+      "installCommand": "npm install",
+      "buildCommand": "npm run build",
+      "entrypoint": "dist/main.js"
     }
   },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": { "service": "backend" }
+      "source": "/api/backend(/.*)?",
+      "destination": {
+        "type": "service",
+        "service": "backend"
+      }
     },
     {
       "source": "/(.*)",
-      "destination": { "service": "frontend" }
+      "destination": {
+        "type": "service",
+        "service": "frontend"
+      }
     }
   ]
 }
