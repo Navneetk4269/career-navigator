@@ -2045,10 +2045,6 @@ Return exactly this structure:
         }
 
         // =====================================
-        // CHECK FILE
-        // =====================================
-
-        // =====================================
         // DETERMINE MIME TYPE
         // =====================================
 
@@ -2120,195 +2116,307 @@ Return exactly this structure:
 
         const prompt = `
 
-You are an evidence verification system
-for a learning roadmap.
+    You are an evidence verification system
+    for a learning roadmap.
 
-Your job is to determine whether the submitted
-evidence provides reasonable evidence that the
-learner completed the specific roadmap task.
+    Your job is to determine whether the submitted
+    evidence provides reasonable evidence that the
+    learner completed the specific roadmap task.
 
-The roadmap phase is provided as context, but
-the verification decision must be based primarily
-on the specific task being submitted.
+    The roadmap phase is provided as context, but
+    the verification decision must be based primarily
+    on the specific task being submitted.
 
-IMPORTANT:
+    IMPORTANT:
 
-You are NOT determining whether the document is
-legally authentic.
+    You are NOT determining whether the document is
+    legally authentic.
 
-You are only determining whether the visible
-information provides sufficient evidence of
-completion.
+    You are only determining whether the visible
+    information provides sufficient evidence of
+    completion.
 
-The evidence may be a certificate, screenshot,
-or public GitHub repository summary.
+    The evidence may be a certificate, screenshot,
+    or public GitHub repository summary.
 
-For GitHub evidence, evaluate the repository
-content, README, source code, and project structure
-against the specific task requirements.
+    For GitHub evidence, evaluate the repository
+    content, README, source code, and project structure
+    against the specific task requirements.
 
-=================================
-LEARNER INFORMATION
-=================================
+    =================================
+    LEARNER INFORMATION
+    =================================
 
-Learner name:
-${profile.bio || 'Not provided'}
+    Learner name:
+    ${profile.bio || 'Not provided'}
 
-=================================
-ROADMAP PHASE
-=================================
+    =================================
+    ROADMAP PHASE
+    =================================
 
-Phase:
-${roadmapPhase.phase || 'Not provided'}
+    Phase:
+    ${roadmapPhase.phase || 'Not provided'}
 
-Required skills:
-${JSON.stringify(
-            roadmapPhase.skills || [],
-            null,
-            2,
-        )}
+    Required skills:
+    ${JSON.stringify(
+        roadmapPhase.skills || [],
+        null,
+        2,
+    )}
 
-Phase description:
-${roadmapPhase.description || 'Not provided'}
+    Phase description:
+    ${roadmapPhase.description || 'Not provided'}
 
-Learning tasks:
-${JSON.stringify(
-            roadmapPhase.tasks || [],
-            null,
-            2,
-        )}
+    Learning tasks:
+    ${JSON.stringify(
+        roadmapPhase.tasks || [],
+        null,
+        2,
+    )}
 
-=================================
-SPECIFIC TASK BEING VERIFIED
-=================================
+    =================================
+    SPECIFIC TASK BEING VERIFIED
+    =================================
 
-Task title:
-${task.title || 'Not provided'}
+    Task title:
+    ${task.title || 'Not provided'}
 
-Task type:
-${task.type || 'Not provided'}
+    Task type:
+    ${task.type || 'Not provided'}
 
-Task details:
-${JSON.stringify(task, null, 2)}
+    Task details:
+    ${JSON.stringify(task, null, 2)}
 
-The evidence must provide reasonable support that
-this specific task was completed.
+    The evidence must provide reasonable support that
+    this specific task was completed.
 
-Do not consider the entire roadmap phase completed
-just because the evidence is related to the phase.
+    Do not consider the entire roadmap phase completed
+    just because the evidence is related to the phase.
 
-=================================
-EVIDENCE INFORMATION
-=================================
+    =================================
+    EVIDENCE INFORMATION
+    =================================
 
-Evidence type:
-${evidenceType}
+    Evidence type:
+    ${evidenceType}
 
-File name:
-${evidenceFileName}
+    File name:
+    ${evidenceFileName}
 
-=================================
-VERIFICATION RULES
-=================================
+    =================================
+    VERIFICATION RULES
+    =================================
 
-Analyze the uploaded evidence carefully.
+    Analyze the uploaded evidence carefully.
 
-Check:
+    Check:
 
-1. Does the submitted evidence appear related to
-   learning, course completion, or the requested project/practice work?
+    1. Does the submitted evidence appear related to
+    learning, course completion, or the requested project/practice work?
 
-2. Does it indicate that the learner completed
-   or implemented something relevant?
+    2. Does it indicate that the learner completed
+    or implemented something relevant?
 
-3. Is there a learner name visible?
+    3. Is there a learner name visible?
 
-4. Is there a course/program name visible?
+    4. Is there a course/program name visible?
 
-5. Is there a platform/provider visible?
+    5. Is there a platform/provider visible?
 
-6. Does the evidence reasonably relate to the
-   specific roadmap task?
+    6. Does the evidence reasonably relate to the
+    specific roadmap task?
 
-7. Does the evidence demonstrate the skills,
-   activity, project, or learning outcome expected
-   by the specific task?
+    7. Does the evidence demonstrate the skills,
+    activity, project, or learning outcome expected
+    by the specific task?
 
-8. Is there enough information to support completion
-   of this specific task?
+    8. Is there enough information to support completion
+    of this specific task?
 
-9. If the evidence is clearly unrelated to the
-   specific task, reject it.
+    9. If the evidence is clearly unrelated to the
+    specific task, reject it.
 
-10. If the evidence does not indicate completion
-    of the specific task, reject it.
+    10. If the evidence does not indicate completion
+        of the specific task, reject it.
 
-11. Do not reject simply because the certificate
-    does not contain every required skill.
+    11. Do not reject simply because the certificate
+        does not contain every required skill.
 
-12. Do not claim that the certificate is
-    cryptographically or legally authentic.
+    12. Do not claim that the certificate is
+        cryptographically or legally authentic.
 
-=================================
-VERIFICATION DECISION
-=================================
+    =================================
+    VERIFICATION DECISION
+    =================================
 
-Set "verified" to true only when the evidence
-provides reasonable evidence that the specific
-roadmap task was completed.
+    Set "verified" to true only when the evidence
+    provides reasonable evidence that the specific
+    roadmap task was completed.
 
-Do not mark the task as verified merely because
-the evidence is related to the roadmap phase.
+    Do not mark the task as verified merely because
+    the evidence is related to the roadmap phase.
 
-Otherwise set "verified" to false.
+    Otherwise set "verified" to false.
 
-Confidence must be between 0 and 1.
+    Confidence must be between 0 and 1.
 
-=================================
-RETURN ONLY JSON
-=================================
+    =================================
+    RETURN ONLY JSON
+    =================================
 
-{
-    "verified": false,
-    "confidence": 0,
-    "learnerName": "",
-    "courseName": "",
-    "platform": "",
-    "completionStatus": "",
-    "relevantSkills": [],
-    "reason": ""
-}
+    {
+        "verified": false,
+        "confidence": 0,
+        "learnerName": "",
+        "courseName": "",
+        "platform": "",
+        "completionStatus": "",
+        "relevantSkills": [],
+        "reason": ""
+    }
 
-`;
+    `;
 
         // =====================================
-        // CALL GEMINI
+        // CALL GEMINI WITH MODEL FALLBACK
         // =====================================
 
-        const response =
-            await this.gemini.models.generateContent({
-                model: 'gemini-3.6-flash',
+        let response: any = null;
+        let lastError: any = null;
 
-                contents: [
-                    {
-                        text: prompt,
-                    },
-                    {
-                        fileData: {
-                            fileUri:
-                                uploadedFile.uri,
+        const models: string[] = [
+            'gemini-3.5-flash-lite',
+            'gemini-3.8-flash',
+            'gemini-3.7-flash',
+            'gemini-3.6-flash',
+        ];
 
-                            mimeType:
-                                uploadedFile.mimeType,
-                        },
-                    },
-                ],
+        const maxRetriesPerModel = 2;
 
-                config: {
-                    responseMimeType:
-                        'application/json',
-                },
-            });
+        for (const model of models) {
+
+            console.log(
+                `Trying Gemini evidence verification model: ${model}`,
+            );
+
+            for (
+                let attempt = 1;
+                attempt <= maxRetriesPerModel;
+                attempt++
+            ) {
+                try {
+
+                    response =
+                        await this.gemini.models.generateContent({
+
+                            model,
+
+                            contents: [
+                                {
+                                    text: prompt,
+                                },
+                                {
+                                    fileData: {
+                                        fileUri:
+                                            uploadedFile.uri,
+
+                                        mimeType:
+                                            uploadedFile.mimeType,
+                                    },
+                                },
+                            ],
+
+                            config: {
+                                responseMimeType:
+                                    'application/json',
+                            },
+                        });
+
+                    console.log(
+                        `Roadmap evidence verification succeeded using model: ${model}`,
+                    );
+
+                    break;
+
+                } catch (error: any) {
+
+                    lastError = error;
+
+                    const status =
+                        error?.status ||
+                        error?.code ||
+                        error?.error?.code;
+
+                    console.error(
+                        `Gemini evidence verification ${model} attempt ${attempt} failed:`,
+                        error?.message,
+                    );
+
+                    // Only retry/fallback for temporary
+                    // service/rate-limit errors.
+                    if (
+                        status !== 503 &&
+                        status !== 429 &&
+                        status !== 500 &&
+                        status !== 408 &&
+                        status !== 504
+                    ) {
+                        throw error;
+                    }
+
+                    if (
+                        attempt < maxRetriesPerModel
+                    ) {
+
+                        // Exponential backoff:
+                        // attempt 1 -> 2 seconds
+                        // attempt 2 -> 4 seconds
+                        const delay =
+                            2000 *
+                            Math.pow(
+                                2,
+                                attempt - 1,
+                            );
+
+                        console.log(
+                            `Retrying ${model} in ${
+                                delay / 1000
+                            } seconds...`,
+                        );
+
+                        await new Promise(
+                            (resolve) =>
+                                setTimeout(
+                                    resolve,
+                                    delay,
+                                ),
+                        );
+                    }
+                }
+            }
+
+            // Stop if Gemini succeeded.
+            if (response) {
+                break;
+            }
+
+            console.log(
+                `${model} unavailable. Trying next Gemini model...`,
+            );
+        }
+
+        // =====================================
+        // ALL MODELS FAILED
+        // =====================================
+
+        if (!response) {
+            throw (
+                lastError ||
+                new Error(
+                    'All Gemini models failed during evidence verification.',
+                )
+            );
+        }
 
         // =====================================
         // GET RESPONSE
@@ -2341,7 +2449,6 @@ RETURN ONLY JSON
             throw new Error(
                 'Gemini returned invalid verification JSON.',
             );
-
         }
 
         // =====================================
