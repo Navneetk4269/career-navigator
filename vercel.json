@@ -1,5 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
     "frontend": {
       "root": "frontend/",
@@ -7,9 +6,8 @@
     },
     "backend": {
       "root": "backend/",
-      "framework": "nestjs",
-      "entrypoint": "src/main.ts",
-      "includeFiles": ["node_modules/**"]
+      "runtime": "container",
+      "entrypoint": "Dockerfile.vercel"
     }
   },
   "rewrites": [
