@@ -8,6 +8,7 @@ import { JobAnalysisModule } from './job-analysis/job-analysis.module';
 import { CareersModule } from './careers/careers.module';
 import { MarketDemandModule } from './market-demand/market-demand.module';
 import { AchievementsModule } from './achievements/achievements.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -38,6 +39,8 @@ import { AchievementsModule } from './achievements/achievements.module';
     MarketDemandModule,
 
     AchievementsModule,
+
+    ChatbotModule,
 
   ],
   controllers: [],
