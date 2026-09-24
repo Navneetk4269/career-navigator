@@ -11,15 +11,10 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  const port = configService.get<number>('PORT') || 5000;
+  const port = configService.get<number>('PORT') || 3000;
 
-  const frontendUrl =
-    configService.get<string>('FRONTEND_URL');
-
-  const allowedOrigins = [
-    'http://localhost:3000',
-    frontendUrl,
-  ].filter(Boolean);
+  // All backend routes will start with /api
+  app.setGlobalPrefix('api');
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -27,6 +22,16 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Keep CORS for local development.
+  // Production frontend + backend use the same Vercel domain.
+  const frontendUrl =
+    configService.get<string>('FRONTEND_URL');
+
+  const allowedOrigins = [
+    'http://localhost:3000',
+    frontendUrl,
+  ].filter(Boolean);
 
   app.enableCors({
     origin: allowedOrigins,
