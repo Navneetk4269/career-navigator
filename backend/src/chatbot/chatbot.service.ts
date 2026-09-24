@@ -50,59 +50,140 @@ export class ChatbotService {
 
     private async generateWithRetry(
         prompt: string,
-        responseMimeType: 'application/json' | 'text/plain',
-    ) {
-        const maxRetries = 3;
+        responseMimeType?: string,
+    ): Promise<string> {
 
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
-            try {
-                const response =
-                    await this.gemini.models.generateContent({
-                        model: 'gemini-3.6-flash',
+        const configuredModel =
+            process.env.GEMINI_MODEL?.trim();
 
-                        contents: prompt,
+        const models: string[] = [
+            ...(configuredModel
+                ? [configuredModel]
+                : []),
 
-                        config: {
-                            responseMimeType,
-                        },
-                    });
+            "gemini-3.5-flash-lite",
+            "gemini-3.6-flash",
+            "gemini-3.7-flash",
+            "gemini-3.8-flash",
+        ];
 
-                return response;
-            } catch (error: any) {
-                const status = error?.status;
+        // Remove duplicate models
+        const uniqueModels = [...new Set(models)];
 
-                console.warn(
-                    `Gemini chatbot attempt ${attempt + 1
-                    }/${maxRetries} failed. Status: ${status}`,
-                );
+        const maxRetriesPerModel = 2;
 
-                // Retry only temporary Gemini availability errors
-                if (
-                    status !== 503 ||
-                    attempt === maxRetries - 1
-                ) {
-                    throw error;
+        let lastError: any = null;
+
+        for (const model of uniqueModels) {
+
+            console.log(
+                `Trying Gemini chatbot model: ${model}`,
+            );
+
+            for (
+                let attempt = 1;
+                attempt <= maxRetriesPerModel;
+                attempt++
+            ) {
+                try {
+
+                    const response =
+                        await this.gemini.models.generateContent({
+                            model,
+                            contents: prompt,
+                            config: responseMimeType
+                                ? {
+                                    responseMimeType,
+                                }
+                                : undefined,
+                        });
+
+                    const text =
+                        response.text?.trim();
+
+                    if (!text) {
+                        throw new Error(
+                            "Gemini returned an empty response.",
+                        );
+                    }
+
+                    console.log(
+                        `Chatbot Gemini succeeded using model: ${model}`,
+                    );
+
+                    return text;
+
+                } catch (error: any) {
+
+                    lastError = error;
+
+                    const status =
+                        error?.status ||
+                        error?.error?.code ||
+                        error?.cause?.status;
+
+                    const errorCode =
+                        error?.code ||
+                        error?.cause?.code ||
+                        error?.cause?.cause?.code;
+
+                    const message =
+                        error?.message || "";
+
+                    const isTransientError =
+                        status === 503 ||
+                        status === 429 ||
+                        status === 500 ||
+                        status === 408 ||
+                        status === 504 ||
+                        errorCode === "UND_ERR_HEADERS_TIMEOUT" ||
+                        errorCode === "UND_ERR_BODY_TIMEOUT" ||
+                        errorCode === "UND_ERR_CONNECT_TIMEOUT" ||
+                        message.includes("fetch failed");
+
+                    console.error(
+                        `Chatbot Gemini ${model} attempt ${attempt} failed:`,
+                        error,
+                    );
+
+                    // Don't retry permanent errors
+                    // such as invalid API key or malformed request.
+                    if (!isTransientError) {
+                        throw error;
+                    }
+
+                    // Retry the same model once before
+                    // moving to the next fallback.
+                    if (attempt < maxRetriesPerModel) {
+
+                        const delay =
+                            attempt * 2000;
+
+                        console.log(
+                            `Retrying ${model} in ${delay}ms...`,
+                        );
+
+                        await new Promise(
+                            (resolve) =>
+                                setTimeout(
+                                    resolve,
+                                    delay,
+                                ),
+                        );
+                    }
                 }
-
-                // Exponential backoff:
-                // Attempt 1 -> wait 2 seconds
-                // Attempt 2 -> wait 4 seconds
-                const delay =
-                    2000 * Math.pow(2, attempt);
-
-                console.warn(
-                    `Gemini temporarily unavailable. Retrying in ${delay / 1000
-                    } seconds...`,
-                );
-
-                await new Promise((resolve) =>
-                    setTimeout(resolve, delay),
-                );
             }
+
+            console.log(
+                `Gemini chatbot model ${model} failed. Trying next fallback...`,
+            );
         }
 
-        throw new Error(
-            'Unable to generate Gemini response.',
+        throw (
+            lastError ||
+            new Error(
+                "All Gemini chatbot models failed.",
+            )
         );
     }
 
@@ -246,8 +327,7 @@ Return ONLY valid JSON:
                     'application/json',
                 );
 
-            const responseText =
-                response.text;
+            const responseText = response;
 
             if (!responseText) {
                 throw new Error(
@@ -473,7 +553,7 @@ Answer the user's question now.
                 );
 
             const responseText =
-                response.text?.trim();
+                response.trim();
 
             if (!responseText) {
                 throw new Error(
