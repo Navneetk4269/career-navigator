@@ -145,12 +145,20 @@ export default function Chatbot() {
     } catch (error) {
       console.error("Chatbot error:", error);
 
+      const errorMessage =
+        error instanceof Error ? error.message : "";
+      const profileNeedsCompletion =
+        /profile (not found|incomplete)|complete your profile/i.test(
+          errorMessage,
+        );
+
       setMessages((previous) => [
         ...previous,
         {
           role: "assistant",
-          content:
-            "Sorry, something went wrong. Please try again.",
+          content: profileNeedsCompletion
+            ? "Please complete your profile to use this feature. Add your education, skills, and interests on the Profile page, then try again."
+            : "Sorry, something went wrong. Please try again.",
         },
       ]);
     } finally {
