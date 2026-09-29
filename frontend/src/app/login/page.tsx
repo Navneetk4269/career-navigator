@@ -53,6 +53,9 @@ export default function Login() {
       // Save login information
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("user", JSON.stringify(data.user));
+      window.dispatchEvent(
+        new Event("career-navigator-auth-change"),
+      );
 
       showPopup("Login successful!");
 

@@ -9,6 +9,7 @@ type Message = {
 };
 
 export default function Chatbot() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -20,6 +21,37 @@ export default function Chatbot() {
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "/api";
+
+  useEffect(() => {
+    const syncAuthentication = () => {
+      const authenticated = Boolean(
+        localStorage.getItem("accessToken"),
+      );
+
+      setIsAuthenticated(authenticated);
+
+      if (!authenticated) {
+        setIsOpen(false);
+        setMessages([]);
+        setSuggestions([]);
+      }
+    };
+
+    syncAuthentication();
+    window.addEventListener(
+      "career-navigator-auth-change",
+      syncAuthentication,
+    );
+    window.addEventListener("storage", syncAuthentication);
+
+    return () => {
+      window.removeEventListener(
+        "career-navigator-auth-change",
+        syncAuthentication,
+      );
+      window.removeEventListener("storage", syncAuthentication);
+    };
+  }, []);
 
   // ============================================================
   // SCROLL TO LATEST MESSAGE
@@ -178,6 +210,10 @@ export default function Chatbot() {
       sendMessage();
     }
   };
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   // ============================================================
   // RENDER

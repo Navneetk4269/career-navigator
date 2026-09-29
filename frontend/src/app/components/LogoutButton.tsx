@@ -8,6 +8,9 @@ export default function LogoutButton() {
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    window.dispatchEvent(
+      new Event("career-navigator-auth-change"),
+    );
 
     showPopup("Logged out successfully!", "success");
 
