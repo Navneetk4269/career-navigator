@@ -1357,56 +1357,44 @@ export class ProfilesService {
         githubUrl: string,
     ): string {
 
-        let username =
-            githubUrl.trim();
+        const input = githubUrl.trim();
 
+        if (!input) {
+            return '';
+        }
 
-        /*
-            REMOVE FULL URL
-        */
+        let profilePath = input;
+        const hasGithubDomain =
+            /^(?:www\.)?github\.com(?:\/|$)/i.test(input);
+        const hasScheme =
+            /^[a-z][a-z\d+.-]*:\/\//i.test(input);
 
-        username =
-            username.replace(
-                /^https?:\/\/(www\.)?github\.com\//i,
-                '',
-            );
+        if (hasGithubDomain || hasScheme) {
+            try {
+                const url = new URL(
+                    hasScheme ? input : `https://${input}`,
+                );
 
+                if (
+                    !['github.com', 'www.github.com'].includes(
+                        url.hostname.toLowerCase(),
+                    )
+                ) {
+                    return '';
+                }
 
-        /*
-            REMOVE TRAILING SLASH
-        */
+                profilePath = url.pathname;
+            } catch {
+                return '';
+            }
+        }
 
-        username =
-            username.replace(
-                /\/$/,
-                '',
-            );
-
-
-        /*
-            HANDLE @username
-        */
-
-        username =
-            username.replace(
-                /^@/,
-                '',
-            );
-
-
-        /*
-            IF USER PASTES A REPOSITORY URL
-    
-            github.com/user/repository
-    
-            TAKE ONLY USERNAME
-        */
-
-        username =
-            username.split('/')[0];
-
-
-        return username;
+        return (
+            profilePath
+                .split('/')
+                .filter(Boolean)[0]
+                ?.replace(/^@/, '') || ''
+        );
     }
     /*skill maping */
     private getSkillsFromGithubLanguages(
