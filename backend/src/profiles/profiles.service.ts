@@ -270,12 +270,12 @@ export class ProfilesService {
 
             {
                 skill: 'C++',
-                pattern: /\bc\+\+\b|\bc plus plus\b/i,
+                pattern: /\bc\+\+(?![a-z])|\bc plus plus\b/i,
             },
 
             {
                 skill: 'C#',
-                pattern: /\bc#\b|\bc sharp\b/i,
+                pattern: /\bc#(?![a-z])|\bc sharp\b/i,
             },
 
             {
@@ -1134,13 +1134,11 @@ export class ProfilesService {
         /*
         ======================================
         UPDATE EDUCATION
-        ONLY IF CURRENTLY EMPTY
         ======================================
         */
 
         if (
-            extractedData.education &&
-            !profile.education
+            extractedData.education
         ) {
 
             profile.education =
@@ -1151,13 +1149,11 @@ export class ProfilesService {
         /*
         ======================================
         UPDATE COLLEGE
-        ONLY IF CURRENTLY EMPTY
         ======================================
         */
 
         if (
-            extractedData.college &&
-            !profile.college
+            extractedData.college
         ) {
 
             profile.college =
@@ -1172,11 +1168,7 @@ export class ProfilesService {
         */
 
         if (
-            extractedData.graduationYear &&
-            (
-                !profile.graduationYear ||
-                profile.graduationYear === 0
-            )
+            extractedData.graduationYear
         ) {
 
             profile.graduationYear =
@@ -1187,13 +1179,11 @@ export class ProfilesService {
         /*
         ======================================
         UPDATE BIO
-        ONLY IF CURRENTLY EMPTY
         ======================================
         */
 
         if (
-            extractedData.bio &&
-            !profile.bio
+            extractedData.bio
         ) {
 
             profile.bio =

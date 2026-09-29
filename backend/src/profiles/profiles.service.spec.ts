@@ -31,4 +31,24 @@ describe('ProfilesService', () => {
       expect(extractUsername(input)).toBe(expected);
     });
   });
+
+  describe('extractSkillsFromText', () => {
+    const extractSkills = (text: string) => {
+      const extract = Reflect.get(
+        ProfilesService.prototype,
+        'extractSkillsFromText',
+      ) as (value: string) => string[];
+
+      return extract.call({}, text);
+    };
+
+    it.each([
+      ['C++ and C#', ['C++', 'C#']],
+      ['C++17 and C#11', ['C++', 'C#']],
+    ])('detects skills in "%s"', (text, expectedSkills) => {
+      expect(extractSkills(text)).toEqual(
+        expect.arrayContaining(expectedSkills),
+      );
+    });
+  });
 });
