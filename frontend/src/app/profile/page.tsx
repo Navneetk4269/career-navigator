@@ -4,9 +4,12 @@ import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { usePopup } from "../components/PopupProvider";
 import LogoutButton from "../components/LogoutButton";
+import { apiFetch } from "../../../lib/api";
+import { useRequireAuth } from "../../../lib/useRequireAuth";
 
 export default function Profile() {
   const { showPopup } = usePopup();
+  const authToken = useRequireAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -45,13 +48,7 @@ export default function Profile() {
   // Load existing user/profile
   useEffect(() => {
     async function loadProfile() {
-      const token = localStorage.getItem("accessToken");
       const storedUser = localStorage.getItem("user");
-
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
 
       // Load basic user information from login
       if (storedUser) {
@@ -67,11 +64,8 @@ export default function Profile() {
 
       // Load saved profile from backend
       try {
-        const response = await fetch("/api/profiles/me", {
+        const response = await apiFetch("/api/profiles/me", {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         });
 
         if (response.ok) {
@@ -99,11 +93,6 @@ export default function Profile() {
             setGithub(profile.githubUsername || "");
             setJobDescription(profile.jobDescription || "");
           }
-        } else if (response.status === 401) {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("user");
-          window.location.href = "/login";
-          return;
         }
       } catch (error) {
         console.error("Unable to load profile:", error);
@@ -112,8 +101,10 @@ export default function Profile() {
       }
     }
 
-    loadProfile();
-  }, []);
+    if (authToken) {
+      loadProfile();
+    }
+  }, [authToken]);
 
   function addSkill() {
     const trimmed = skillInput.trim();
@@ -188,9 +179,7 @@ export default function Profile() {
 
   async function handleGithubSync() {
 
-    const token = localStorage.getItem("accessToken");
-
-    if (!token) {
+    if (!authToken) {
       showPopup("Please sign in first.");
       return;
     }
@@ -204,14 +193,13 @@ export default function Profile() {
 
     try {
 
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/profiles/github/sync",
         {
           method: "POST",
 
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
 
           body: JSON.stringify({
@@ -276,9 +264,7 @@ export default function Profile() {
 
   async function handleResumeExtraction() {
 
-    const token = localStorage.getItem("accessToken");
-
-    if (!token) {
+    if (!authToken) {
       showPopup("Please sign in first.");
       return;
     }
@@ -299,14 +285,10 @@ export default function Profile() {
         resumeFile
       );
 
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/profiles/resume/extract",
         {
           method: "POST",
-
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
 
           body: formData,
         }
@@ -380,22 +362,18 @@ export default function Profile() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const token = localStorage.getItem("accessToken");
-
-    if (!token) {
+    if (!authToken) {
       showPopup("Please sign in first.");
-      window.location.href = "/login";
       return;
     }
 
     setSaving(true);
 
     try {
-      const response = await fetch("/api/profiles", {
+      const response = await apiFetch("/api/profiles", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           education,
@@ -435,20 +413,17 @@ export default function Profile() {
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
+    if (!authToken) {
       showPopup("Please sign in first.", "error");
-      window.location.href = "/login";
       return;
     }
 
     setChangingPassword(true);
     try {
-      const response = await fetch("/api/auth/change-password", {
+      const response = await apiFetch("/api/auth/change-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           currentPassword: currentPassword || undefined,

@@ -2,6 +2,7 @@ import {
     BadRequestException,
     ConflictException,
     Injectable,
+    Logger,
     ServiceUnavailableException,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -40,6 +41,8 @@ const OAUTH_COOKIE_OPTIONS = {
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
+
     constructor(
         private readonly usersService: UsersService,
 
@@ -342,19 +345,11 @@ export class AuthService {
                 `${frontendUrl}/auth/callback#${fragment.toString()}`,
             );
         } catch (error) {
-            const responseData = axios.isAxiosError(error) &&
-                responseDataIsObject(error.response?.data)
-                ? error.response.data
+            const status = axios.isAxiosError(error)
+                ? error.response?.status
                 : undefined;
-            const providerDetails = responseData
-                ? [responseData.error, responseData.error_description]
-                    .filter((value): value is string => typeof value === 'string')
-                    .join(': ')
-                : '';
-            console.error(
-                `OAuth ${provider} callback failed (${failureCode}):`,
-                providerDetails ||
-                    (error instanceof Error ? error.message : 'Unknown error'),
+            this.logger.warn(
+                `OAuth ${provider} callback failed (${failureCode}; ${error instanceof Error ? error.name : 'Unknown error'}; status ${status ?? 'unknown'})`,
             );
             return response.redirect(
                 `${frontendUrl}/auth/callback?error=${failureCode}`,
@@ -445,10 +440,4 @@ export class AuthService {
         return firstBuffer.length === secondBuffer.length &&
             timingSafeEqual(firstBuffer, secondBuffer);
     }
-}
-
-function responseDataIsObject(
-    value: unknown,
-): value is { error?: unknown; error_description?: unknown } {
-    return typeof value === 'object' && value !== null;
 }

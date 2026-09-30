@@ -2,13 +2,14 @@ import {
     Injectable,
     BadRequestException,
     InternalServerErrorException,
+    Logger,
     NotFoundException,
 } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { GoogleGenAI } from '@google/genai';
+import { GeminiService } from '../gemini/gemini.service';
 
 import {
     Profile,
@@ -27,7 +28,7 @@ import {
 
 @Injectable()
 export class ChatbotService {
-    private readonly gemini: GoogleGenAI;
+    private readonly logger = new Logger(ChatbotService.name);
 
     constructor(
         @InjectModel(Profile.name)
@@ -38,11 +39,8 @@ export class ChatbotService {
 
         @InjectModel(MarketDemand.name)
         private readonly marketDemandModel: Model<MarketDemandDocument>,
-    ) {
-        this.gemini = new GoogleGenAI({
-            apiKey: process.env.GEMINI_API_KEY!,
-        });
-    }
+        private readonly geminiService: GeminiService,
+    ) { }
 
     // ============================================================
     // GEMINI GENERATION WITH RETRY
@@ -52,138 +50,9 @@ export class ChatbotService {
         prompt: string,
         responseMimeType?: string,
     ): Promise<string> {
-
-        const configuredModel =
-            process.env.GEMINI_MODEL?.trim();
-
-        const models: string[] = [
-            ...(configuredModel
-                ? [configuredModel]
-                : []),
-
-            "gemini-3.5-flash-lite",
-            "gemini-3.6-flash",
-            "gemini-3.7-flash",
-            "gemini-3.8-flash",
-        ];
-
-        // Remove duplicate models
-        const uniqueModels = [...new Set(models)];
-
-        const maxRetriesPerModel = 2;
-
-        let lastError: any = null;
-
-        for (const model of uniqueModels) {
-
-            console.log(
-                `Trying Gemini chatbot model: ${model}`,
-            );
-
-            for (
-                let attempt = 1;
-                attempt <= maxRetriesPerModel;
-                attempt++
-            ) {
-                try {
-
-                    const response =
-                        await this.gemini.models.generateContent({
-                            model,
-                            contents: prompt,
-                            config: responseMimeType
-                                ? {
-                                    responseMimeType,
-                                }
-                                : undefined,
-                        });
-
-                    const text =
-                        response.text?.trim();
-
-                    if (!text) {
-                        throw new Error(
-                            "Gemini returned an empty response.",
-                        );
-                    }
-
-                    console.log(
-                        `Chatbot Gemini succeeded using model: ${model}`,
-                    );
-
-                    return text;
-
-                } catch (error: any) {
-
-                    lastError = error;
-
-                    const status =
-                        error?.status ||
-                        error?.error?.code ||
-                        error?.cause?.status;
-
-                    const errorCode =
-                        error?.code ||
-                        error?.cause?.code ||
-                        error?.cause?.cause?.code;
-
-                    const message =
-                        error?.message || "";
-
-                    const isTransientError =
-                        status === 503 ||
-                        status === 429 ||
-                        status === 500 ||
-                        status === 408 ||
-                        status === 504 ||
-                        errorCode === "UND_ERR_HEADERS_TIMEOUT" ||
-                        errorCode === "UND_ERR_BODY_TIMEOUT" ||
-                        errorCode === "UND_ERR_CONNECT_TIMEOUT" ||
-                        message.includes("fetch failed");
-
-                    console.error(
-                        `Chatbot Gemini ${model} attempt ${attempt} failed:`,
-                        `${error?.name || 'Error'} (status: ${status || 'unknown'})`,
-                    );
-
-                    // Don't retry permanent errors
-                    // such as invalid API key or malformed request.
-                    if (!isTransientError) {
-                        throw error;
-                    }
-
-                    // Retry the same model once before
-                    // moving to the next fallback.
-                    if (attempt < maxRetriesPerModel) {
-
-                        const delay =
-                            attempt * 2000;
-
-                        console.log(
-                            `Retrying ${model} in ${delay}ms...`,
-                        );
-
-                        await new Promise(
-                            (resolve) =>
-                                setTimeout(
-                                    resolve,
-                                    delay,
-                                ),
-                        );
-                    }
-                }
-            }
-
-            console.log(
-                `Gemini chatbot model ${model} failed. Trying next fallback...`,
-            );
-        }
-
-        throw (
-            lastError ||
-            new Error(
-                "All Gemini chatbot models failed.",
-            )
+        return this.geminiService.generateContent(
+            prompt,
+            responseMimeType ? { responseMimeType } : undefined,
         );
     }
 
@@ -335,8 +204,10 @@ Return ONLY valid JSON:
                 );
             }
 
-            const result =
-                JSON.parse(responseText);
+            const result = this.geminiService.parseJson<Record<string, any>>(
+                responseText,
+                'Suggested questions could not be read. Please try again.',
+            );
 
             if (
                 !result.questions ||
@@ -357,9 +228,8 @@ Return ONLY valid JSON:
                     .slice(0, 5),
             };
         } catch (error) {
-            console.error(
-                'Chatbot suggested questions error:',
-                error instanceof Error ? error.name : 'Unknown error',
+            this.logger.error(
+                `Suggested question generation failed (${error instanceof Error ? error.name : 'Unknown error'})`,
             );
 
             // Safe fallback
@@ -565,9 +435,8 @@ Answer the user's question now.
                 answer: responseText,
             };
         } catch (error: any) {
-            console.error(
-                'Career Navigator chatbot error:',
-                error?.name || 'Unknown error',
+            this.logger.error(
+                `Chatbot response generation failed (${error?.name || 'Unknown error'})`,
             );
 
             // Give a more useful error for Gemini 503

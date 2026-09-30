@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import LogoutButton from "../components/LogoutButton";
+import { usePopup } from "../components/PopupProvider";
+import { apiFetch, getAccessToken } from "../../../lib/api";
+import { useRequireAuth } from "../../../lib/useRequireAuth";
 
 type SkillGap = {
   skill: string;
@@ -115,6 +118,7 @@ function MarketCareerDetailsModal({
   onClose,
   onSelected,
 }: MarketCareerDetailsModalProps) {
+  const { showConfirm } = usePopup();
   const [selecting, setSelecting] = useState(false);
   const [selectMessage, setSelectMessage] = useState("");
 
@@ -126,14 +130,18 @@ function MarketCareerDetailsModal({
   const selectRoadmap = async () => {
     if (!career.roadmap?.length || selecting) return;
 
+    const confirmed = await showConfirm({
+      title: "Replace your active roadmap?",
+      message: "Selecting this roadmap replaces your current roadmap and resets its progress.",
+      confirmLabel: "Replace roadmap",
+    });
+    if (!confirmed) return;
+
     try {
       setSelecting(true);
       setSelectMessage("");
 
-      const token =
-        localStorage.getItem("accessToken");
-
-      if (!token) {
+      if (!getAccessToken()) {
         window.location.href = "/login";
         return;
       }
@@ -170,13 +178,12 @@ function MarketCareerDetailsModal({
         roadmap: career.roadmap || [],
       };
 
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/careers/select-roadmap",
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             recommendation,
@@ -666,6 +673,7 @@ function MarketCareerDetailsModal({
 }
 
 export default function Dashboard() {
+  useRequireAuth();
   const [user, setUser] = useState<User | null>(null);
 
   const [roadmap, setRoadmap] =
@@ -691,14 +699,6 @@ export default function Dashboard() {
   }, []);
 
   async function loadDashboard() {
-    const token =
-      localStorage.getItem("accessToken");
-
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-
     try {
       /*
        * ================================
@@ -721,14 +721,9 @@ export default function Dashboard() {
        */
 
       const roadmapResponse =
-        await fetch(
+        await apiFetch(
           "/api/careers/my-roadmap",
-          {
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
+          {}
         );
 
       const roadmapText =
@@ -751,14 +746,9 @@ export default function Dashboard() {
        */
 
       const recommendationResponse =
-        await fetch(
+        await apiFetch(
           "/api/careers/latest",
-          {
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
+          {}
         );
 
       const recommendationText =
@@ -786,14 +776,9 @@ export default function Dashboard() {
        */
 
       const marketDemandResponse =
-        await fetch(
+        await apiFetch(
           "/api/market-demand/latest",
-          {
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
+          {}
         );
 
       const marketDemandText =
@@ -822,14 +807,9 @@ export default function Dashboard() {
       */
 
       const achievementsResponse =
-          await fetch(
+            await apiFetch(
               "/api/achievements/me",
-              {
-                  headers: {
-                      Authorization:
-                          `Bearer ${token}`,
-                  },
-              }
+              {}
           );
 
       const achievementsText =

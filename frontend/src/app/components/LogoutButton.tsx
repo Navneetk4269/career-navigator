@@ -1,16 +1,13 @@
 "use client";
 
 import { usePopup } from "./PopupProvider";
+import { clearAuthSession } from "../../../lib/api";
 
 export default function LogoutButton() {
   const { showPopup } = usePopup();
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    window.dispatchEvent(
-      new Event("career-navigator-auth-change"),
-    );
+    clearAuthSession();
 
     showPopup("Logged out successfully!", "success");
 

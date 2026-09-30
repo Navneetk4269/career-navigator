@@ -25,11 +25,14 @@ import {
 } from '../profiles/schemas/profile.schema';
 
 import { MarketDemand, MarketDemandSchema } from '../market-demand/schemas/market-demand.schema';
+import { GeminiModule } from '../gemini/gemini.module';
 
 
 @Module({
 
   imports: [
+
+    GeminiModule,
 
     MongooseModule.forFeature([
 

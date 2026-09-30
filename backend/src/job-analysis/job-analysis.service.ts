@@ -2,6 +2,7 @@ import {
     BadRequestException,
     Injectable,
     InternalServerErrorException,
+    Logger,
     NotFoundException,
 } from '@nestjs/common';
 
@@ -13,9 +14,7 @@ import {
     Model,
 } from 'mongoose';
 
-import {
-    GoogleGenAI,
-} from '@google/genai';
+import { GeminiService } from '../gemini/gemini.service';
 
 import {
     Profile,
@@ -36,8 +35,7 @@ import {
 @Injectable()
 export class JobAnalysisService {
 
-    private readonly gemini: GoogleGenAI;
-
+    private readonly logger = new Logger(JobAnalysisService.name);
 
     constructor(
 
@@ -55,27 +53,9 @@ export class JobAnalysisService {
         private readonly marketDemandModel:
             Model<MarketDemandDocument>,
 
-    ) {
+        private readonly geminiService: GeminiService,
 
-        const apiKey =
-            process.env.GEMINI_API_KEY;
-
-
-        if (!apiKey) {
-
-            throw new Error(
-                'GEMINI_API_KEY is missing in the .env file.',
-            );
-
-        }
-
-
-        this.gemini =
-            new GoogleGenAI({
-                apiKey,
-            });
-
-    }
+    ) { }
 
 
     async analyzeJob(userId: string) {
@@ -358,196 +338,14 @@ Return exactly this structure:
 
         try {
 
-            // ==========================================
-            // STEP 5: SEND DATA TO GEMINI
-            // WITH MODEL FALLBACK
-            // ==========================================
-
-            let response: any = null;
-
-            // If GEMINI_MODEL exists in .env, try it first.
-            // Otherwise use the default fallback order.
-
-            const configuredModel =
-                process.env.GEMINI_MODEL?.trim();
-
-            const models: string[] = [
-                ...(configuredModel
-                    ? [configuredModel]
-                    : []),
-
-                'gemini-3.8-flash',
-                'gemini-3.7-flash',
-                'gemini-3.5-flash-lite',
-            ];
-
-
-            const maxRetriesPerModel = 2;
-
-            let lastError: any = null;
-
-
-            // ==========================================
-            // TRY EACH MODEL
-            // ==========================================
-
-            for (const model of models) {
-
-                console.log(
-                    `Trying Gemini model for Job Analysis: ${model}`,
-                );
-
-
-                for (
-                    let attempt = 1;
-                    attempt <= maxRetriesPerModel;
-                    attempt++
-                ) {
-
-                    try {
-
-                        response =
-                            await this.gemini.models.generateContent({
-
-                                model,
-
-                                contents: prompt,
-
-                                config: {
-                                    responseMimeType:
-                                        'application/json',
-                                },
-
-                            });
-
-
-                        console.log(
-                            `Job Analysis Gemini succeeded using model: ${model}`,
-                        );
-
-
-                        break;
-
-                    } catch (error: any) {
-
-                        lastError = error;
-
-
-                        const status =
-                            error?.status ||
-                            error?.error?.code;
-
-
-                        console.error(
-                            `Job Analysis Gemini ${model} attempt ${attempt} failed:`,
-                            `${error?.name || 'Error'} (status: ${status || 'unknown'})`,
-                        );
-
-
-                        // ----------------------------------
-                        // FALLBACK / RETRY CONDITIONS
-                        // ----------------------------------
-                        //
-                        // 404 = model unavailable/not found
-                        // 429 = rate limit
-                        // 503 = service unavailable
-                        //
-                        // These should cause us to retry
-                        // or move to the next model.
-                        // ----------------------------------
-
-                        if (
-                            status !== 404 &&
-                            status !== 429 &&
-                            status !== 503
-                        ) {
-
-                            throw error;
-
-                        }
-
-
-                        if (
-                            attempt < maxRetriesPerModel
-                        ) {
-
-                            const delay =
-                                attempt * 2000;
-
-
-                            console.log(
-                                `Retrying ${model} in ${
-                                    delay / 1000
-                                } seconds...`,
-                            );
-
-
-                            await new Promise(
-                                (resolve) =>
-                                    setTimeout(
-                                        resolve,
-                                        delay,
-                                    ),
-                            );
-
-                        }
-
-                    }
-
-                }
-
-
-                // ----------------------------------
-                // Model succeeded
-                // ----------------------------------
-
-                if (response) {
-
-                    break;
-
-                }
-
-
-                console.log(
-                    `${model} unavailable. Trying next Gemini model...`,
-                );
-
-            }
-
-
-            // ==========================================
-            // ALL MODELS FAILED
-            // ==========================================
-
-            if (!response) {
-
-                throw lastError ||
-                    new Error(
-                        'All Gemini models failed.',
-                    );
-
-            }
-
-
-            // ==========================================
-            // STEP 6: CONVERT GEMINI JSON
-            // ==========================================
-
-            const content =
-                response.text;
-
-
-            if (!content) {
-
-                throw new Error(
-                    'Gemini did not return a response.',
-                );
-
-            }
-
-
-            const result =
-                JSON.parse(content);
+            const content = await this.geminiService.generateContent(
+                prompt,
+                { responseMimeType: 'application/json' },
+            );
+            const result = this.geminiService.parseJson<Record<string, any>>(
+                content,
+                'Job analysis returned invalid data. Please try again.',
+            );
 
 
             // ==========================================
@@ -907,9 +705,8 @@ Return exactly this structure:
 
         } catch (error) {
 
-            console.error(
-                'Gemini Job Analysis Error:',
-                error instanceof Error ? error.name : 'Unknown error',
+            this.logger.error(
+                `Job analysis failed (${error instanceof Error ? error.name : 'Unknown error'})`,
             );
 
 

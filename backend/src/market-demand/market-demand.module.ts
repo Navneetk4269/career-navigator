@@ -17,9 +17,11 @@ import { Career, CareerSchema } from '../careers/schemas/career.schema';
 import { MarketDemandController } from './market-demand.controller';
 
 import { MarketDemandService } from './market-demand.service';
+import { GeminiModule } from '../gemini/gemini.module';
 
 @Module({
   imports: [
+    GeminiModule,
     MongooseModule.forFeature([
       { name: MarketDemand.name, schema: MarketDemandSchema },
       { name: Profile.name, schema: ProfileSchema },

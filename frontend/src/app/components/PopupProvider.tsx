@@ -4,11 +4,13 @@ import {
     createContext,
     useContext,
     useEffect,
+    useRef,
     useState,
     ReactNode,
 } from "react";
 
 import MsgPopup from "./msgpopup";
+import ConfirmDialog from "./ConfirmDialog";
 
 type PopupType = "success" | "error" | "warning" | "info";
 
@@ -23,6 +25,14 @@ type PopupContextType = {
         message: string,
         type?: PopupType
     ) => void;
+    showConfirm: (options: ConfirmOptions) => Promise<boolean>;
+};
+
+type ConfirmOptions = {
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
 };
 
 const PopupContext = createContext<
@@ -40,6 +50,10 @@ export function PopupProvider({
     } | null>(null);
     const [achievementQueue, setAchievementQueue] =
         useState<AchievementNotification[]>([]);
+    const [confirmation, setConfirmation] =
+        useState<ConfirmOptions | null>(null);
+    const confirmationResolver =
+        useRef<((confirmed: boolean) => void) | null>(null);
 
     useEffect(() => {
         const consumeAchievements = () => {
@@ -104,8 +118,25 @@ export function PopupProvider({
         setPopup(null);
     };
 
+    const showConfirm = (options: ConfirmOptions) =>
+        new Promise<boolean>((resolve) => {
+            if (confirmationResolver.current) {
+                resolve(false);
+                return;
+            }
+
+            confirmationResolver.current = resolve;
+            setConfirmation(options);
+        });
+
+    const resolveConfirmation = (confirmed: boolean) => {
+        confirmationResolver.current?.(confirmed);
+        confirmationResolver.current = null;
+        setConfirmation(null);
+    };
+
     return (
-        <PopupContext.Provider value={{ showPopup }}>
+        <PopupContext.Provider value={{ showPopup, showConfirm }}>
             {children}
 
             {popup && (
@@ -124,6 +155,16 @@ export function PopupProvider({
                     onClose={() => setAchievementQueue((queue) => queue.slice(1))}
                 />
             )}
+
+            <ConfirmDialog
+                isOpen={confirmation !== null}
+                title={confirmation?.title || "Confirm action"}
+                message={confirmation?.message || "Continue with this action?"}
+                confirmLabel={confirmation?.confirmLabel}
+                cancelLabel={confirmation?.cancelLabel}
+                onConfirm={() => resolveConfirmation(true)}
+                onCancel={() => resolveConfirmation(false)}
+            />
         </PopupContext.Provider>
     );
 }

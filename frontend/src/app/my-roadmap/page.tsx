@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import RoadmapProgress from "../components/RoadmapProgress";
 import LogoutButton from "../components/LogoutButton";
 import MsgPopup from "../components/msgpopup";
+import { apiFetch } from "../../../lib/api";
+import { useRequireAuth } from "../../../lib/useRequireAuth";
 
 
 interface RoadmapPhase {
@@ -95,6 +97,8 @@ type Achievement = {
 
 export default function MyRoadmapPage() {
 
+    useRequireAuth();
+
     const [roadmapData, setRoadmapData] =
         useState<MyRoadmapData | null>(null);
 
@@ -139,17 +143,9 @@ export default function MyRoadmapPage() {
                 setLoading(true);
             }
 
-            const token =
-                localStorage.getItem("accessToken");
-
-
-            const response = await fetch(
+            const response = await apiFetch(
                 "/api/careers/my-roadmap",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
+                {}
             );
 
 
@@ -258,26 +254,18 @@ export default function MyRoadmapPage() {
             return;
         }
 
-        const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-            setProofError("You are not logged in.");
-            return;
-        }
-
         try {
             setUploadingProof(true);
             setProofError("");
             setProofMessage("");
 
             if (evidenceType === "github") {
-                const response = await fetch(
+                const response = await apiFetch(
                     "/api/careers/roadmap-github-repo",
                     {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
                         },
                         body: JSON.stringify({
                             phaseIndex: selectedPhaseIndex,
@@ -329,14 +317,10 @@ export default function MyRoadmapPage() {
                 selectedTaskIndex.toString(),
             );
 
-            const response = await fetch(
+                const response = await apiFetch(
                     "/api/careers/roadmap-proof",
                 {
                     method: "POST",
-
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
 
                     body: formData,
                 },

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePopup } from "./components/PopupProvider";
 import LogoutButton from "./components/LogoutButton";
+import { clearAuthSession, getAccessToken } from "../../lib/api";
 
 export default function Home() {
   const { showPopup } = usePopup();
@@ -11,14 +12,13 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
 
     setIsLoggedIn(!!token);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    clearAuthSession();
 
     setIsLoggedIn(false);
 

@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import dns from 'node:dns';
 
 dns.setDefaultResultOrder('ipv4first');
@@ -42,7 +42,7 @@ async function bootstrap() {
 
   await app.listen(port, '0.0.0.0');
 
-  console.log(`Backend running on port ${port}`);
+  Logger.log(`Backend running on port ${port}`, 'Bootstrap');
 }
 
 bootstrap();

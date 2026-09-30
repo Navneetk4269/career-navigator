@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { usePopup } from "./PopupProvider";
+import { apiFetch, getAccessToken } from "../../../lib/api";
 
 type MarketCareer = {
     rank?: number;
@@ -52,6 +54,7 @@ export default function MarketCareerDetailsModal({
     onClose,
     onSelected,
 }: MarketCareerDetailsModalProps) {
+    const { showConfirm } = usePopup();
     const [selecting, setSelecting] = useState(false);
     const [selectMessage, setSelectMessage] = useState("");
 
@@ -63,14 +66,18 @@ export default function MarketCareerDetailsModal({
     const selectRoadmap = async () => {
         if (!career.roadmap?.length || selecting) return;
 
+        const confirmed = await showConfirm({
+            title: "Replace your active roadmap?",
+            message: "Selecting this roadmap replaces your current roadmap and resets its progress.",
+            confirmLabel: "Replace roadmap",
+        });
+        if (!confirmed) return;
+
         try {
             setSelecting(true);
             setSelectMessage("");
 
-            const token =
-                localStorage.getItem("accessToken");
-
-            if (!token) {
+            if (!getAccessToken()) {
                 window.location.href = "/login";
                 return;
             }
@@ -107,13 +114,12 @@ export default function MarketCareerDetailsModal({
                 roadmap: career.roadmap || [],
             };
 
-            const response = await fetch(
+            const response = await apiFetch(
                 "/api/careers/select-roadmap",
                 {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
                     },
                     body: JSON.stringify({
                         recommendation,

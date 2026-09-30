@@ -1,6 +1,7 @@
 import {
     Injectable,
     InternalServerErrorException,
+    Logger,
     NotFoundException,
     BadRequestException,
 } from '@nestjs/common';
@@ -9,7 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { Model } from 'mongoose';
 
-import { GoogleGenAI } from '@google/genai';
+import { GeminiService } from '../gemini/gemini.service';
 
 import {
     Career,
@@ -351,8 +352,7 @@ function addRequiredIbmCourseTasks(
 @Injectable()
 export class CareersService {
 
-    private readonly gemini: GoogleGenAI;
-
+    private readonly logger = new Logger(CareersService.name);
 
     constructor(
 
@@ -367,12 +367,9 @@ export class CareersService {
 
         private readonly achievementsService: AchievementsService,
 
+        private readonly geminiService: GeminiService,
+
     ) {
-
-        this.gemini = new GoogleGenAI({
-            apiKey: process.env.GEMINI_API_KEY!,
-        });
-
     }
 
 
@@ -929,132 +926,10 @@ Return exactly this structure:
 
 
 
-            // =====================================
-            // STEP 5: CALL GEMINI WITH RETRY
-            // =====================================
-
-            // =====================================
-            // STEP 5: CALL GEMINI WITH MODEL FALLBACK
-            // =====================================
-
-            let response: any;
-
-            const models = [
-                'gemini-3.8-flash',
-                'gemini-3.7-flash',
-                'gemini-3.5-flash-lite',
-            ];
-
-            const maxRetriesPerModel = 2;
-
-            let lastError: any = null;
-
-            for (const model of models) {
-
-                console.log(
-                    `Trying Gemini model: ${model}`,
-                );
-
-                for (
-                    let attempt = 1;
-                    attempt <= maxRetriesPerModel;
-                    attempt++
-                ) {
-
-                    try {
-
-                        response =
-                            await this.gemini.models.generateContent({
-
-                                model,
-
-                                contents: prompt,
-
-                                config: {
-                                    responseMimeType:
-                                        'application/json',
-                                },
-
-                            });
-
-                        console.log(
-                            `Gemini succeeded using model: ${model}`,
-                        );
-
-                        break;
-
-                    } catch (error: any) {
-
-                        lastError = error;
-
-                        const status =
-                            error?.status ||
-                            error?.code;
-
-                        console.error(
-                            `Gemini ${model} attempt ${attempt} failed:`,
-                            `${error?.name || 'Error'} (status: ${status || 'unknown'})`,
-                        );
-
-                        // Only retry/fallback for temporary
-                        // rate-limit or service availability errors.
-                        if (
-                            status !== 503 &&
-                            status !== 429
-                        ) {
-                            throw error;
-                        }
-
-                        if (
-                            attempt < maxRetriesPerModel
-                        ) {
-
-                            const delay =
-                                attempt * 2000;
-
-                            console.log(
-                                `Retrying ${model} in ${
-                                    delay / 1000
-                                } seconds...`,
-                            );
-
-                            await new Promise(
-                                (resolve) =>
-                                    setTimeout(
-                                        resolve,
-                                        delay,
-                                    ),
-                            );
-
-                        }
-
-                    }
-
-                }
-
-                // Stop if Gemini succeeded.
-                if (response) {
-                    break;
-                }
-
-                console.log(
-                    `${model} unavailable. Trying next Gemini model...`,
-                );
-            }
-
-            if (!response) {
-                throw lastError ||
-                    new Error(
-                        'All Gemini models failed.',
-                    );
-            }
-
-            // =====================================
-            // STEP 6: GET GEMINI RESPONSE
-            // =====================================
-
-            const responseText =
-                response.text;
+            const responseText = await this.geminiService.generateContent(
+                prompt,
+                { responseMimeType: 'application/json' },
+            );
 
 
             if (!responseText) {
@@ -1070,7 +945,10 @@ Return exactly this structure:
             // STEP 7: PARSE JSON
             // =====================================
 
-            const result = JSON.parse(responseText);
+            const result = this.geminiService.parseJson<Record<string, any>>(
+                responseText,
+                'Career recommendations could not be read. Please try again.',
+            );
 
             result.recommendations =
                 result.recommendations.map(
@@ -1146,9 +1024,8 @@ Return exactly this structure:
 
         } catch (error: any) {
 
-            console.error(
-                'Career Recommendation Error:',
-                error instanceof Error ? error.name : 'Unknown error',
+            this.logger.error(
+                `Career recommendation failed (${error instanceof Error ? error.name : 'Unknown error'})`,
             );
 
 
@@ -1745,9 +1622,8 @@ Return exactly this structure:
                 taskIndex,
                 taskTitle,
             ).catch((error) => {
-                console.error(
-                    'Roadmap evidence background verification error:',
-                    error instanceof Error ? error.name : 'Unknown error',
+                this.logger.error(
+                    `Roadmap evidence background verification failed (${error instanceof Error ? error.name : 'Unknown error'})`,
                 );
             });
 
@@ -1990,9 +1866,8 @@ Return exactly this structure:
 
         } catch (error: any) {
 
-            console.error(
-                'Roadmap Evidence Verification Error:',
-                error instanceof Error ? error.name : 'Unknown error',
+            this.logger.error(
+                `Roadmap evidence verification failed (${error instanceof Error ? error.name : 'Unknown error'})`,
             );
 
             // Keep evidence pending if Gemini itself failed.
@@ -2123,11 +1998,8 @@ Return exactly this structure:
         );
 
         const uploadedFile =
-            await this.gemini.files.upload({
-                file: evidenceBlob,
-                config: {
-                    mimeType,
-                },
+            await this.geminiService.uploadFile(evidenceBlob, {
+                mimeType,
             });
 
         if (
@@ -2309,179 +2181,27 @@ Return exactly this structure:
 
     `;
 
-        // =====================================
-        // CALL GEMINI WITH MODEL FALLBACK
-        // =====================================
-
-        let response: any = null;
-        let lastError: any = null;
-
-        const models: string[] = [
-            'gemini-3.5-flash-lite',
-            'gemini-3.8-flash',
-            'gemini-3.7-flash',
-            'gemini-3.6-flash',
-        ];
-
-        const maxRetriesPerModel = 2;
-
-        for (const model of models) {
-
-            console.log(
-                `Trying Gemini evidence verification model: ${model}`,
-            );
-
-            for (
-                let attempt = 1;
-                attempt <= maxRetriesPerModel;
-                attempt++
-            ) {
-                try {
-
-                    response =
-                        await this.gemini.models.generateContent({
-
-                            model,
-
-                            contents: [
-                                {
-                                    text: prompt,
-                                },
-                                {
-                                    fileData: {
-                                        fileUri:
-                                            uploadedFile.uri,
-
-                                        mimeType:
-                                            uploadedFile.mimeType,
-                                    },
-                                },
-                            ],
-
-                            config: {
-                                responseMimeType:
-                                    'application/json',
-                            },
-                        });
-
-                    console.log(
-                        `Roadmap evidence verification succeeded using model: ${model}`,
-                    );
-
-                    break;
-
-                } catch (error: any) {
-
-                    lastError = error;
-
-                    const status =
-                        error?.status ||
-                        error?.code ||
-                        error?.error?.code;
-
-                    console.error(
-                        `Gemini evidence verification ${model} attempt ${attempt} failed:`,
-                        `${error?.name || 'Error'} (status: ${status || 'unknown'})`,
-                    );
-
-                    // Only retry/fallback for temporary
-                    // service/rate-limit errors.
-                    if (
-                        status !== 503 &&
-                        status !== 429 &&
-                        status !== 500 &&
-                        status !== 408 &&
-                        status !== 504
-                    ) {
-                        throw error;
-                    }
-
-                    if (
-                        attempt < maxRetriesPerModel
-                    ) {
-
-                        // Exponential backoff:
-                        // attempt 1 -> 2 seconds
-                        // attempt 2 -> 4 seconds
-                        const delay =
-                            2000 *
-                            Math.pow(
-                                2,
-                                attempt - 1,
-                            );
-
-                        console.log(
-                            `Retrying ${model} in ${
-                                delay / 1000
-                            } seconds...`,
-                        );
-
-                        await new Promise(
-                            (resolve) =>
-                                setTimeout(
-                                    resolve,
-                                    delay,
-                                ),
-                        );
-                    }
-                }
-            }
-
-            // Stop if Gemini succeeded.
-            if (response) {
-                break;
-            }
-
-            console.log(
-                `${model} unavailable. Trying next Gemini model...`,
-            );
-        }
-
-        // =====================================
-        // ALL MODELS FAILED
-        // =====================================
-
-        if (!response) {
-            throw (
-                lastError ||
-                new Error(
-                    'All Gemini models failed during evidence verification.',
-                )
-            );
-        }
-
-        // =====================================
-        // GET RESPONSE
-        // =====================================
-
-        const responseText =
-            response.text;
-
-        if (!responseText) {
-            throw new Error(
-                'Gemini returned an empty verification response.',
-            );
-        }
+        const responseText = await this.geminiService.generateContent(
+            [
+                { text: prompt },
+                {
+                    fileData: {
+                        fileUri: uploadedFile.uri!,
+                        mimeType: uploadedFile.mimeType!,
+                    },
+                },
+            ],
+            { responseMimeType: 'application/json' },
+        );
 
         // =====================================
         // PARSE JSON
         // =====================================
 
-        let result: any;
-
-        try {
-
-            result =
-                JSON.parse(
-                    responseText,
-                );
-
-        } catch {
-
-            throw new Error(
-                'Gemini returned invalid verification JSON.',
-            );
-        }
+        const result = this.geminiService.parseJson<Record<string, any>>(
+            responseText,
+            'The evidence check returned invalid data. Please try again.',
+        );
 
         // =====================================
         // VALIDATE RESPONSE

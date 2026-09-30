@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePopup } from "./PopupProvider";
+import { apiFetch, getAccessToken } from "../../../lib/api";
 
 interface RoadmapTask {
     title: string;
@@ -47,6 +49,7 @@ export default function RoadmapModal({
     onClose,
 }: RoadmapModalProps) {
     const router = useRouter();
+    const { showPopup, showConfirm } = usePopup();
 
     const [selecting, setSelecting] = useState(false);
 
@@ -57,25 +60,30 @@ export default function RoadmapModal({
     const handleSelectRoadmap = async () => {
         if (!recommendation) return;
 
+        const confirmed = await showConfirm({
+            title: "Replace your active roadmap?",
+            message: "Selecting this roadmap replaces your current roadmap and resets its progress.",
+            confirmLabel: "Replace roadmap",
+        });
+        if (!confirmed) return;
+
         try {
             setSelecting(true);
 
             // Get access token saved during login
-            const token = localStorage.getItem("accessToken");
-
-            if (!token) {
-                alert("Your session has expired. Please login again.");
+            if (!getAccessToken()) {
+                showPopup("Your session has expired. Please log in again.", "error");
+                router.push("/login");
                 return;
             }
 
-            const response = await fetch(
+            const response = await apiFetch(
                 "/api/careers/select-roadmap",
                 {
                     method: "PATCH",
 
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
                     },
 
                     body: JSON.stringify({
@@ -101,10 +109,11 @@ export default function RoadmapModal({
         } catch (error) {
             console.error("Select roadmap error:", error);
 
-            alert(
+            showPopup(
                 error instanceof Error
                     ? error.message
-                    : "Failed to select roadmap. Please try again."
+                    : "Failed to select roadmap. Please try again.",
+                "error",
             );
 
         } finally {

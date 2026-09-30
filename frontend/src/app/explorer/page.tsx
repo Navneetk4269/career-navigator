@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import MarketCareerDetailsModal from "../components/MarketCareerDetailsModal";
 import LogoutButton from "../components/LogoutButton";
+import { usePopup } from "../components/PopupProvider";
+import { apiFetch, getAccessToken } from "../../../lib/api";
+import { useRequireAuth } from "../../../lib/useRequireAuth";
 
 
 type CareerRoadmapModalProps = {
@@ -19,6 +22,7 @@ function CareerRoadmapModal({
   onClose,
   onSelected,
 }: CareerRoadmapModalProps) {
+  const { showConfirm } = usePopup();
   const [selecting, setSelecting] = useState(false);
   const [selectMessage, setSelectMessage] = useState("");
 
@@ -39,7 +43,14 @@ function CareerRoadmapModal({
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
+    const confirmed = await showConfirm({
+      title: "Replace your active roadmap?",
+      message: "Selecting this roadmap replaces your current roadmap and resets its progress.",
+      confirmLabel: "Replace roadmap",
+    });
+    if (!confirmed) return;
+
+    const token = getAccessToken();
 
     if (!token) {
       window.location.href = "/login";
@@ -111,13 +122,12 @@ function CareerRoadmapModal({
         payload
       );
 
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/careers/select-roadmap",
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
         }
@@ -515,6 +525,8 @@ function CareerRoadmapModal({
 }
 
 export default function Explorer() {
+  useRequireAuth();
+  const { showPopup, showConfirm } = usePopup();
   const [recommendation, setRecommendation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -581,7 +593,7 @@ export default function Explorer() {
   }
 
   async function loadRecommendation() {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
 
     if (!token) {
       window.location.href = "/login";
@@ -589,11 +601,10 @@ export default function Explorer() {
     }
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/careers/latest",
         {
           headers: {
-            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -612,7 +623,7 @@ export default function Explorer() {
   }
 
   async function generateRecommendations() {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
 
     if (!token) {
       window.location.href = "/login";
@@ -622,12 +633,11 @@ export default function Explorer() {
     setGenerating(true);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/careers/recommend",
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -636,21 +646,21 @@ export default function Explorer() {
       const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
-        alert(data?.message || "Failed to generate recommendations.");
+        showPopup(`${data?.message || "Failed to generate recommendations."} Please try again.`, "error");
         return;
       }
 
       setRecommendation(data);
     } catch (error) {
       console.error("Recommendation error:", error);
-      alert("Unable to generate recommendations.");
+      showPopup("Unable to generate recommendations. Please try again.", "error");
     } finally {
       setGenerating(false);
     }
   }
 
   async function generateMarketDemand() {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
 
     if (!token) {
       window.location.href = "/login";
@@ -660,12 +670,11 @@ export default function Explorer() {
     setGeneratingMarketDemand(true);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/market-demand/generate",
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -674,9 +683,10 @@ export default function Explorer() {
       const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
-        alert(
+        showPopup(
           data?.message ||
-          "Failed to generate market demand."
+          "Failed to generate market demand. Please try again.",
+          "error",
         );
         return;
       }
@@ -688,27 +698,24 @@ export default function Explorer() {
         error
       );
 
-      alert(
-        "Unable to generate market demand."
-      );
+      showPopup("Unable to generate market demand. Please try again.", "error");
     } finally {
       setGeneratingMarketDemand(false);
     }
   }
 
   async function loadMarketDemand() {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
 
     if (!token) {
       return;
     }
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/market-demand/latest",
         {
           headers: {
-            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -730,7 +737,7 @@ export default function Explorer() {
   }
 
   async function analyzeJobDescription() {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
 
     if (!token) {
       window.location.href = "/login";
@@ -740,12 +747,11 @@ export default function Explorer() {
     setAnalyzingJob(true);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/job-analysis/analyze",
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -754,7 +760,7 @@ export default function Explorer() {
       const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
-        alert(data?.message || "Job analysis failed.");
+        showPopup(`${data?.message || "Job analysis failed."} Please try again.`, "error");
         return;
       }
 
@@ -775,14 +781,14 @@ export default function Explorer() {
       }
     } catch (error) {
       console.error("Job analysis error:", error);
-      alert("Unable to analyze the job description.");
+      showPopup("Unable to analyze the job description. Please try again.", "error");
     } finally {
       setAnalyzingJob(false);
     }
   }
 
   async function selectJobAnalysisRoadmap() {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
 
     if (!token) {
       window.location.href = "/login";
@@ -800,6 +806,13 @@ export default function Explorer() {
       );
       return;
     }
+
+    const confirmed = await showConfirm({
+      title: "Replace your active roadmap?",
+      message: "Selecting this Job Analysis roadmap replaces your current roadmap and resets its progress.",
+      confirmLabel: "Replace roadmap",
+    });
+    if (!confirmed) return;
 
     setSelectingJobRoadmap(true);
     setJobRoadmapMessage('');
@@ -875,13 +888,12 @@ export default function Explorer() {
         payload
       );
 
-      const response = await fetch(
+      const response = await apiFetch(
         "/api/careers/select-roadmap",
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
         }
@@ -1131,7 +1143,7 @@ export default function Explorer() {
                 </svg>
 
                 {generating
-                  ? "Generating..."
+                  ? "Analyzing, this can take up to 20 seconds"
                   : "Regenerate Recommendations"}
               </button>
             )}
@@ -1342,7 +1354,7 @@ export default function Explorer() {
                 disabled={generating}
                 className="group mt-5 flex items-center gap-2 rounded-lg bg-orange-500 px-6 py-3 font-semibold text-white shadow-md shadow-orange-500/25 transition hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30 disabled:opacity-60"
               >
-                {generating ? "Generating..." : "Generate Career Recommendations"}
+                {generating ? "Analyzing, this can take up to 20 seconds" : "Generate Career Recommendations"}
                 {!generating && (
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 transition group-hover:translate-x-0.5">
                     <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -1382,7 +1394,7 @@ export default function Explorer() {
               className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {generatingMarketDemand
-                ? "Analyzing..."
+                ? "Analyzing, this can take up to 20 seconds"
                 : marketDemand
                   ? "Refresh Market Demand"
                   : "Explore Market Demand"}
@@ -1553,7 +1565,7 @@ export default function Explorer() {
               </svg>
 
               {analyzingJob
-                ? "Analyzing..."
+                ? "Analyzing, this can take up to 20 seconds"
                 : jobAnalysis
                   ? "Re-analyze Job Description"
                   : "Analyze Job Description"}

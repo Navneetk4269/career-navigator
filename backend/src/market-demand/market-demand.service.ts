@@ -1,6 +1,7 @@
 import {
     Injectable,
     InternalServerErrorException,
+    Logger,
     NotFoundException,
 } from '@nestjs/common';
 
@@ -8,7 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { Model } from 'mongoose';
 
-import { GoogleGenAI } from '@google/genai';
+import { GeminiService } from '../gemini/gemini.service';
 
 import {
     MarketDemand,
@@ -28,7 +29,7 @@ import {
 @Injectable()
 export class MarketDemandService {
 
-    private readonly ai: GoogleGenAI;
+    private readonly logger = new Logger(MarketDemandService.name);
 
     constructor(
 
@@ -44,12 +45,9 @@ export class MarketDemandService {
         private readonly careerModel:
             Model<CareerDocument>,
 
+        private readonly geminiService: GeminiService,
+
     ) {
-
-        this.ai = new GoogleGenAI({
-            apiKey: process.env.GEMINI_API_KEY,
-        });
-
     }
 
 
@@ -398,147 +396,14 @@ RETURN EXACTLY THIS STRUCTURE:
 
         try {
 
-            // =====================================
-            // CALL GEMINI WITH MODEL FALLBACK
-            // =====================================
-
-            let response: any = null;
-
-            const models = [
-                'gemini-3.8-flash',
-                'gemini-3.7-flash',
-                'gemini-3.5-flash-lite',
-            ];
-
-            const maxRetriesPerModel = 2;
-
-            let lastError: any = null;
-
-            for (const model of models) {
-
-                console.log(
-                    `Trying Gemini model: ${model}`,
-                );
-
-                for (
-                    let attempt = 1;
-                    attempt <= maxRetriesPerModel;
-                    attempt++
-                ) {
-
-                    try {
-
-                        response =
-                            await this.ai.models.generateContent({
-
-                                model,
-
-                                contents: prompt,
-
-                                config: {
-                                    responseMimeType:
-                                        'application/json',
-                                },
-
-                            });
-
-                        console.log(
-                            `Gemini succeeded using model: ${model}`,
-                        );
-
-                        break;
-
-                    } catch (error: any) {
-
-                        lastError = error;
-
-                        const status =
-                            error?.status ||
-                            error?.error?.code;
-
-                        console.error(
-                            `Gemini ${model} attempt ${attempt} failed:`,
-                            `${error?.name || 'Error'} (status: ${status || 'unknown'})`,
-                        );
-
-                        // Only retry/fallback for temporary
-                        // service availability or rate-limit errors.
-
-                        if (
-                            status !== 503 &&
-                            status !== 429
-                        ) {
-                            throw error;
-                        }
-
-                        if (
-                            attempt < maxRetriesPerModel
-                        ) {
-
-                            const delay =
-                                attempt * 2000;
-
-                            console.log(
-                                `Retrying ${model} in ${
-                                    delay / 1000
-                                } seconds...`,
-                            );
-
-                            await new Promise(
-                                (resolve) =>
-                                    setTimeout(
-                                        resolve,
-                                        delay,
-                                    ),
-                            );
-
-                        }
-
-                    }
-
-                }
-
-                // Gemini succeeded.
-                if (response) {
-                    break;
-                }
-
-                console.log(
-                    `${model} unavailable. Trying next Gemini model...`,
-                );
-
-            }
-
-
-            if (!response) {
-
-                throw lastError ||
-                    new Error(
-                        'All Gemini models failed.',
-                    );
-
-            }
-
-
-            // =====================================
-            // PARSE GEMINI RESPONSE
-            // =====================================
-
-            const responseText =
-                response.text;
-
-
-            if (!responseText) {
-
-                throw new Error(
-                    'Gemini returned an empty response.',
-                );
-
-            }
-
-
-            const parsed =
-                JSON.parse(responseText);
+            const responseText = await this.geminiService.generateContent(
+                prompt,
+                { responseMimeType: 'application/json' },
+            );
+            const parsed = this.geminiService.parseJson<Record<string, any>>(
+                responseText,
+                'Market demand analysis returned invalid data. Please try again.',
+            );
 
 
             if (
@@ -993,9 +858,8 @@ RETURN EXACTLY THIS STRUCTURE:
 
         } catch (error) {
 
-            console.error(
-                'Market demand generation error:',
-                error instanceof Error ? error.name : 'Unknown error',
+            this.logger.error(
+                `Market demand generation failed (${error instanceof Error ? error.name : 'Unknown error'})`,
             );
 
             throw new InternalServerErrorException(

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { apiFetch, getAccessToken } from "../../../lib/api";
 
 type Message = {
   role: "user" | "assistant";
@@ -16,16 +17,16 @@ export default function Chatbot() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState(false);
+  const [suggestionAttempt, setSuggestionAttempt] = useState(0);
+  const [failedMessage, setFailedMessage] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "/api";
 
   useEffect(() => {
     const syncAuthentication = () => {
       const authenticated = Boolean(
-        localStorage.getItem("accessToken"),
+        getAccessToken(),
       );
 
       setIsAuthenticated(authenticated);
@@ -34,6 +35,8 @@ export default function Chatbot() {
         setIsOpen(false);
         setMessages([]);
         setSuggestions([]);
+        setSuggestionsError(false);
+        setFailedMessage(null);
       }
     };
 
@@ -73,23 +76,15 @@ export default function Chatbot() {
     }
 
     const fetchSuggestions = async () => {
-      const token = localStorage.getItem("accessToken");
-
-      if (!token) {
+      if (!getAccessToken()) {
         return;
       }
 
       setLoadingSuggestions(true);
+      setSuggestionsError(false);
 
       try {
-        const response = await fetch(
-          `${API_URL}/chatbot/suggestions`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
+        const response = await apiFetch("/chatbot/suggestions");
 
         if (!response.ok) {
           throw new Error("Failed to fetch suggestions");
@@ -105,13 +100,14 @@ export default function Chatbot() {
           "Failed to load chatbot suggestions:",
           error,
         );
+        setSuggestionsError(true);
       } finally {
         setLoadingSuggestions(false);
       }
     };
 
     fetchSuggestions();
-  }, [isOpen, suggestions.length, API_URL]);
+  }, [isOpen, suggestions.length, suggestionAttempt]);
 
   // ============================================================
   // SEND MESSAGE
@@ -124,13 +120,12 @@ export default function Chatbot() {
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
-
-    if (!token) {
+    if (!getAccessToken()) {
       return;
     }
 
     setMessage("");
+    setFailedMessage(null);
 
     setMessages((previous) => [
       ...previous,
@@ -143,13 +138,12 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_URL}/chatbot/message`,
+      const response = await apiFetch(
+        "/chatbot/message",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             message: userMessage,
@@ -174,6 +168,7 @@ export default function Chatbot() {
             "Sorry, I couldn't generate a response.",
         },
       ]);
+      setFailedMessage(null);
     } catch (error) {
       console.error("Chatbot error:", error);
 
@@ -193,6 +188,7 @@ export default function Chatbot() {
             : "Sorry, something went wrong. Please try again.",
         },
       ]);
+          setFailedMessage(userMessage);
     } finally {
       setLoading(false);
     }
@@ -305,7 +301,19 @@ export default function Chatbot() {
 
                   {loadingSuggestions ? (
                     <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-400 shadow-sm">
-                      Loading suggestions...
+                      Analyzing, this can take up to 20 seconds
+                    </div>
+                  ) : suggestionsError ? (
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 shadow-sm">
+                      <p>Could not load suggestions. Please retry.</p>
+                      <button
+                        type="button"
+                        onClick={() => setSuggestionAttempt((attempt) => attempt + 1)}
+                        disabled={loadingSuggestions}
+                        className="mt-2 font-bold underline disabled:opacity-50"
+                      >
+                        Retry suggestions
+                      </button>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -316,6 +324,7 @@ export default function Chatbot() {
                             onClick={() =>
                               sendMessage(question)
                             }
+                            disabled={loading}
                             className="
                               w-full
                               rounded-xl
@@ -487,6 +496,20 @@ export default function Chatbot() {
               </div>
             ))}
 
+            {failedMessage && !loading && (
+              <div className="mb-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <p>Could not get a response. Please retry.</p>
+                <button
+                  type="button"
+                  onClick={() => sendMessage(failedMessage)}
+                  disabled={loading}
+                  className="mt-2 font-bold underline disabled:opacity-50"
+                >
+                  Retry message
+                </button>
+              </div>
+            )}
+
             {/* ==================================================
                 TYPING INDICATOR
             ================================================== */}
@@ -494,6 +517,9 @@ export default function Chatbot() {
             {loading && (
               <div className="mb-3 flex justify-start">
                 <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                  <p className="mb-2 text-xs font-medium text-slate-500">
+                    Analyzing, this can take up to 20 seconds
+                  </p>
                   <div className="flex gap-1">
                     <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400" />
 
@@ -634,6 +660,7 @@ export default function Chatbot() {
     {/* Chatbot button */}
 
     <button
+      disabled={loadingSuggestions}
         onClick={() =>
         setIsOpen((previous) => !previous)
         }
@@ -653,6 +680,8 @@ export default function Chatbot() {
         hover:-translate-y-1
         hover:scale-105
         hover:shadow-2xl
+        disabled:cursor-not-allowed
+        disabled:opacity-60
         "
         aria-label={
         isOpen

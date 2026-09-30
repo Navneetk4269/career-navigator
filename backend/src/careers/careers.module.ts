@@ -13,6 +13,7 @@ import {
 
 import { CareersController } from './careers.controller';
 import { CareersService } from './careers.service';
+import { GeminiModule } from '../gemini/gemini.module';
 
 import { AchievementsModule } from '../achievements/achievements.module';
 import {
@@ -37,6 +38,7 @@ import {
       },
     ]),
     AchievementsModule,
+    GeminiModule,
   ],
 
   controllers: [

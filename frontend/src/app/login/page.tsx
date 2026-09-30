@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePopup } from "../components/PopupProvider";
-import { API_URL } from "../../../lib/api";
+import { API_URL, apiFetch } from "../../../lib/api";
 
 export default function Login() {
   const { showPopup } = usePopup();
@@ -52,10 +52,11 @@ export default function Login() {
     const password = formData.get("password");
 
     try {
-      const response = await fetch(
-        `${API_URL}/auth/login`,
+      const response = await apiFetch(
+        "/auth/login",
         {
           method: "POST",
+          auth: false,
           headers: {
             "Content-Type": "application/json",
           },

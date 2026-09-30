@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePopup } from "../components/PopupProvider";
 import { API_URL } from "../../../lib/api";
+import { apiFetch } from "../../../lib/api";
 
 export default function Signup() {
   const { showPopup } = usePopup();
@@ -21,10 +22,11 @@ export default function Signup() {
     const password = formData.get("password");
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/signup`,
+      const response = await apiFetch(
+        "/auth/signup",
         {
           method: "POST",
+          auth: false,
           headers: {
             "Content-Type": "application/json",
           },
