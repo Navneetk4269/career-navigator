@@ -25,6 +25,17 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Social login configuration
+
+Google and LinkedIn sign-in use OAuth 2.0 authorization code flow with PKCE. Set these backend environment variables:
+
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
+- `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET`
+- `FRONTEND_URL` to the frontend origin
+- `BACKEND_URL` to the backend origin, unless each provider's `*_REDIRECT_URI` is set explicitly
+
+Register `https://<backend-origin>/api/auth/google/callback` and `https://<backend-origin>/api/auth/linkedin/callback` as the providers' redirect URIs. For local development, the defaults use `http://localhost:3000` as the backend origin; set `BACKEND_URL` when the backend listens elsewhere. LinkedIn's OpenID Connect product and the `openid`, `profile`, and `email` scopes must be enabled for its application.
+
 ## Project setup
 
 ```bash

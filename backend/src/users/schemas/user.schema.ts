@@ -34,8 +34,14 @@ export class User {
     })
     email!: string;
 
-    @Prop({ required: true })
-    password!: string;
+    @Prop()
+    password?: string;
+
+    @Prop({ unique: true, sparse: true })
+    googleId?: string;
+
+    @Prop({ unique: true, sparse: true })
+    linkedinId?: string;
 
     @Prop({ default: false })
     profileCompleted!: boolean;

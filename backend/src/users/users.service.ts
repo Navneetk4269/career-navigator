@@ -21,15 +21,39 @@ export class UsersService {
         });
     }
 
+    async findByOAuthId(
+        providerField: 'googleId' | 'linkedinId',
+        providerId: string,
+    ) {
+        return this.userModel.findOne({
+            [providerField]: providerId,
+        });
+    }
+
     async createUser(
         name: string,
         email: string,
-        password: string,
+        password?: string,
     ) {
         const user = new this.userModel({
             name,
             email,
             password,
+        });
+
+        return user.save();
+    }
+
+    async createOAuthUser(
+        name: string,
+        email: string,
+        providerField: 'googleId' | 'linkedinId',
+        providerId: string,
+    ) {
+        const user = new this.userModel({
+            name,
+            email,
+            [providerField]: providerId,
         });
 
         return user.save();
