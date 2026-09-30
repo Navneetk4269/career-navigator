@@ -1,6 +1,8 @@
-export const API_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    '/api';
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+export const API_URL = process.env.NODE_ENV === 'production'
+    ? '/api'
+    : configuredApiUrl || '/api';
 
 export function getAccessToken() {
     if (typeof window === 'undefined') {
