@@ -74,10 +74,35 @@ export default function Signup() {
       {/* Logo */}
       <Link
         href="/"
-        className="absolute left-6 top-6 text-2xl font-black tracking-tight"
+        className="group absolute left-6 top-6 flex items-center gap-3"
       >
-        <span className="text-orange-500">CAREER</span>
-        <span className="text-blue-600">NAVIGATOR</span>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 via-orange-500 to-blue-600 text-white shadow-lg shadow-orange-500/20 transition duration-300 group-hover:scale-105 group-hover:rotate-3">
+          <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+            <path
+              d="M4 17 10 11l4 4 6-8"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M16 7h4v4"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <div>
+          <div className="text-lg font-black tracking-tight">
+            <span className="text-orange-500">CAREER</span>
+            <span className="ml-1 text-blue-600">NAVIGATOR</span>
+          </div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Build your future
+          </p>
+        </div>
       </Link>
 
       {/* Card */}
@@ -259,12 +284,12 @@ export default function Signup() {
 
         {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-sm font-semibold">
+          <p className="text-sm font-black">
             <span className="text-orange-500">CAREER</span>
-            <span className="text-blue-600">NAVIGATOR</span>
+            <span className="ml-1 text-blue-600">NAVIGATOR</span>
           </p>
-          <p className="mt-1 text-xs text-slate-400">
-            Your gateway to a better career
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Build your future
           </p>
         </div>
       </div>
