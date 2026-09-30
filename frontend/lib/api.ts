@@ -4,6 +4,10 @@ export const API_URL = process.env.NODE_ENV === 'production'
     ? '/api'
     : configuredApiUrl || '/api';
 
+export const OAUTH_API_URL = configuredApiUrl
+    ? `${configuredApiUrl.replace(/\/+$/, '').replace(/\/api$/, '')}/api`
+    : API_URL;
+
 export function getAccessToken() {
     if (typeof window === 'undefined') {
         return null;

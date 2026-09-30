@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePopup } from "../components/PopupProvider";
-import { API_URL, apiFetch } from "../../../lib/api";
+import { OAUTH_API_URL, apiFetch } from "../../../lib/api";
 
 export default function Login() {
   const { showPopup } = usePopup();
@@ -283,7 +283,7 @@ export default function Login() {
         {/* Social login */}
         <div className="mt-6 flex justify-center gap-4">
           <a
-            href={`${API_URL}/auth/google`}
+            href={`${OAUTH_API_URL}/auth/google`}
             aria-label="Continue with Google"
             title="Continue with Google"
             className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
@@ -297,7 +297,7 @@ export default function Login() {
           </a>
 
           <a
-            href={`${API_URL}/auth/linkedin`}
+            href={`${OAUTH_API_URL}/auth/linkedin`}
             aria-label="Continue with LinkedIn"
             title="Continue with LinkedIn"
             className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
