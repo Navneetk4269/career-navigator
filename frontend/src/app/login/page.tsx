@@ -14,13 +14,30 @@ export default function Login() {
   useEffect(() => {
     const error = new URLSearchParams(window.location.search).get("oauthError");
     if (error) {
-      const message = error === "email_not_shared"
-        ? "LinkedIn did not share your email. Enable the email permission or use email and password."
-        : error === "email_unverified"
-          ? "LinkedIn did not verify this email, so we could not link it to your existing account."
-          : error === "state_error"
-            ? "The sign-in session expired or could not be verified. Please try again."
-            : "Social sign-in could not finish. Check the provider settings and try again.";
+      const messages: Record<string, string> = {
+        email_not_shared:
+          "LinkedIn did not share your email. Enable the email permission or use email and password.",
+        email_unverified:
+          "LinkedIn did not verify this email, so we could not link it to your existing account.",
+        state_error:
+          "The sign-in session expired or could not be verified. Please try again.",
+        token_exchange_failed:
+          "LinkedIn rejected the sign-in code. Check the client credentials and exact callback URL in Render and LinkedIn.",
+        profile_fetch_failed:
+          "LinkedIn sign-in succeeded, but profile access failed. Check that OpenID Connect sign-in is enabled for the app.",
+        profile_missing:
+          "LinkedIn did not return a member profile. Check the app's OpenID Connect permissions.",
+        account_conflict:
+          "This email is already connected to a different social account. Sign in with that account instead.",
+        account_creation_failed:
+          "We couldn't create your account. Check the backend logs or try again.",
+        session_creation_failed:
+          "Your profile was found, but the app couldn't create a session. Please try again.",
+        provider_error:
+          "Social sign-in is not configured. Check the provider credentials in Render.",
+      };
+      const message = messages[error] ||
+        "Social sign-in could not finish. Check the backend logs and try again.";
       showPopup(message);
       window.history.replaceState({}, "", "/login");
     }

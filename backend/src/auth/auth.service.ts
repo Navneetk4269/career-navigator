@@ -272,9 +272,19 @@ export class AuthService {
                 `${frontendUrl}/auth/callback#${fragment.toString()}`,
             );
         } catch (error) {
+            const responseData = axios.isAxiosError(error) &&
+                responseDataIsObject(error.response?.data)
+                ? error.response.data
+                : undefined;
+            const providerDetails = responseData
+                ? [responseData.error, responseData.error_description]
+                    .filter((value): value is string => typeof value === 'string')
+                    .join(': ')
+                : '';
             console.error(
                 `OAuth ${provider} callback failed (${failureCode}):`,
-                error instanceof Error ? error.message : 'Unknown error',
+                providerDetails ||
+                    (error instanceof Error ? error.message : 'Unknown error'),
             );
             return response.redirect(
                 `${frontendUrl}/auth/callback?error=${failureCode}`,
@@ -365,4 +375,10 @@ export class AuthService {
         return firstBuffer.length === secondBuffer.length &&
             timingSafeEqual(firstBuffer, secondBuffer);
     }
+}
+
+function responseDataIsObject(
+    value: unknown,
+): value is { error?: unknown; error_description?: unknown } {
+    return typeof value === 'object' && value !== null;
 }
