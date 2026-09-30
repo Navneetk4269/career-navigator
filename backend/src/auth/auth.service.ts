@@ -115,31 +115,40 @@ export class AuthService {
         const provider = this.getProvider(providerName);
         const config = this.getOAuthConfig(provider);
         const state = randomBytes(32).toString('hex');
-        const verifier = randomBytes(32).toString('base64url');
-        const challenge = createHash('sha256')
-            .update(verifier)
-            .digest('base64url');
+        const verifier = provider === 'google'
+            ? randomBytes(32).toString('base64url')
+            : undefined;
+        const challenge = verifier
+            ? createHash('sha256')
+                .update(verifier)
+                .digest('base64url')
+            : undefined;
 
         const secure = config.redirectUri.startsWith('https://');
         response.cookie('oauth_state', state, {
             ...OAUTH_COOKIE_OPTIONS,
             secure,
         });
-        response.cookie('oauth_verifier', verifier, {
-            ...OAUTH_COOKIE_OPTIONS,
-            secure,
-        });
+        if (verifier) {
+            response.cookie('oauth_verifier', verifier, {
+                ...OAUTH_COOKIE_OPTIONS,
+                secure,
+            });
+        }
 
         const authorizationUrl = new URL(config.authorizationUrl);
-        authorizationUrl.search = new URLSearchParams({
+        const authorizationParams = new URLSearchParams({
             client_id: config.clientId,
             redirect_uri: config.redirectUri,
             response_type: 'code',
             scope: 'openid profile email',
             state,
-            code_challenge: challenge,
-            code_challenge_method: 'S256',
-        }).toString();
+        });
+        if (challenge) {
+            authorizationParams.set('code_challenge', challenge);
+            authorizationParams.set('code_challenge_method', 'S256');
+        }
+        authorizationUrl.search = authorizationParams.toString();
 
         return response.redirect(authorizationUrl.toString());
     }
@@ -171,24 +180,29 @@ export class AuthService {
             });
 
             failureCode = 'state_error';
-            if (!code || !state || !savedState || !verifier ||
+            if (!code || !state || !savedState ||
+                (provider === 'google' && !verifier) ||
                 !this.safeEqual(state, savedState)) {
                 throw new UnauthorizedException('Invalid OAuth state');
             }
 
             failureCode = 'token_exchange_failed';
+            const tokenParams: Record<string, string> = {
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: config.redirectUri,
+                client_id: config.clientId,
+                client_secret: config.clientSecret,
+            };
+            if (provider === 'google' && verifier) {
+                tokenParams.code_verifier = verifier;
+            }
+
             const tokenResponse = await axios.post<{
                 access_token: string;
             }>(
                 config.tokenUrl,
-                new URLSearchParams({
-                    grant_type: 'authorization_code',
-                    code,
-                    redirect_uri: config.redirectUri,
-                    client_id: config.clientId,
-                    client_secret: config.clientSecret,
-                    code_verifier: verifier,
-                }).toString(),
+                new URLSearchParams(tokenParams).toString(),
                 { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
             );
 
