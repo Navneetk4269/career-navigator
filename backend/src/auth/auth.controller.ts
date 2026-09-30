@@ -10,6 +10,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -26,6 +27,7 @@ export class AuthController {
     ) { }
 
     @Post('signup')
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
     signup(
         @Body() signupDto: SignupDto,
     ) {
@@ -36,6 +38,7 @@ export class AuthController {
 
 
     @Post('login')
+    @Throttle({ default: { limit: 10, ttl: 60_000 } })
     login(
         @Body() loginDto: LoginDto,
     ) {

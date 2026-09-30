@@ -254,6 +254,10 @@ function MarketCareerDetailsModal({
 
         <div className="max-h-[calc(92vh-86px)] overflow-y-auto px-6 py-6 sm:px-8">
 
+          <p className="mb-4 text-xs font-medium text-slate-500">
+            AI-estimated indicators, not official market data.
+          </p>
+
           {/* SCORE CARDS */}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -1657,6 +1661,10 @@ export default function Dashboard() {
 
               <p className="mt-1 text-sm text-slate-500">
                 Explore careers based on current market demand and growth.
+              </p>
+
+              <p className="mt-2 text-xs font-medium text-slate-500">
+                AI-estimated indicators, not official market data.
               </p>
 
             </div>

@@ -647,10 +647,6 @@ export class ProfilesService {
         file: any,
     ): Promise<string> {
 
-        console.log(
-            '\n========== STARTING CLOUD OCR ==========\n',
-        );
-
         const apiKey =
             this.configService.get<string>(
                 'OCR_SPACE_API_KEY',
@@ -669,17 +665,6 @@ export class ProfilesService {
                 'Uploaded resume buffer is missing.',
             );
         }
-
-
-        console.log(
-            'File:',
-            file.originalname,
-        );
-
-        console.log(
-            'Size:',
-            file.size,
-        );
 
 
         const formData =
@@ -748,7 +733,7 @@ export class ProfilesService {
                         },
 
                         timeout:
-                            180000,
+                            30_000,
 
                         maxBodyLength:
                             Infinity,
@@ -758,19 +743,6 @@ export class ProfilesService {
                     },
 
                 );
-
-
-            console.log(
-                '\n========== OCR RESPONSE ==========\n',
-            );
-
-            console.log(
-                JSON.stringify(
-                    response.data,
-                    null,
-                    2,
-                ),
-            );
 
 
             const data =
@@ -820,48 +792,9 @@ export class ProfilesService {
             }
 
 
-            console.log(
-                '\n========== EXTRACTED OCR TEXT ==========\n',
-            );
-
-            console.log(
-                extractedText,
-            );
-
-
-            console.log(
-                '\n========== OCR TEXT LENGTH ==========\n',
-            );
-
-            console.log(
-                extractedText.length,
-            );
-
-
             return extractedText;
 
         } catch (error: any) {
-
-            console.error(
-                '\n========== CLOUD OCR ERROR ==========\n',
-            );
-
-            console.error(
-                'Message:',
-                error.message,
-            );
-
-            console.error(
-                'Code:',
-                error.code,
-            );
-
-            console.error(
-                'Response:',
-                error.response?.data,
-            );
-
-
             if (
                 error instanceof
                 BadRequestException
@@ -937,16 +870,6 @@ export class ProfilesService {
         if (
             extension === 'pdf'
         ) {
-
-            console.log(
-                '\nResume is a PDF.',
-            );
-
-            console.log(
-                'Sending PDF to Cloud OCR...',
-            );
-
-
             extractedText =
                 await this.extractTextUsingCloudOCR(
                     file,
@@ -963,12 +886,6 @@ export class ProfilesService {
         if (
             extension === 'docx'
         ) {
-
-            console.log(
-                '\nResume is a DOCX file.',
-            );
-
-
             if (!file.buffer) {
 
                 throw new BadRequestException(
@@ -1020,15 +937,6 @@ export class ProfilesService {
             );
 
 
-        console.log(
-            '\n========== DETECTED SKILLS ==========\n',
-        );
-
-        console.log(
-            extractedSkills,
-        );
-
-
         /*
         ======================================
         EXTRACT PROGRAMMING LANGUAGES
@@ -1041,15 +949,6 @@ export class ProfilesService {
             );
 
 
-        console.log(
-            '\n========== PROGRAMMING LANGUAGES ==========\n',
-        );
-
-        console.log(
-            extractedLanguages,
-        );
-
-
         /*
         ======================================
         EXTRACT OTHER INFORMATION
@@ -1060,15 +959,6 @@ export class ProfilesService {
             this.extractResumeInformation(
                 extractedText,
             );
-
-
-        console.log(
-            '\n========== DETECTED RESUME DATA ==========\n',
-        );
-
-        console.log(
-            extractedData,
-        );
 
 
         /*
@@ -1480,12 +1370,6 @@ export class ProfilesService {
         userId: string,
         githubUrl: string,
     ) {
-
-        console.log(
-            '\n========== GITHUB SYNC STARTED ==========\n',
-        );
-
-
         /*
             EXTRACT USERNAME
         */
@@ -1504,12 +1388,6 @@ export class ProfilesService {
         }
 
 
-        console.log(
-            'GitHub Username:',
-            githubUsername,
-        );
-
-
         try {
 
             /*
@@ -1524,6 +1402,7 @@ export class ProfilesService {
                             Accept:
                                 'application/vnd.github+json',
                         },
+                        timeout: 10_000,
                     },
                 );
 
@@ -1549,6 +1428,7 @@ export class ProfilesService {
                             Accept:
                                 'application/vnd.github+json',
                         },
+                        timeout: 10_000,
                     },
                 );
 
@@ -1596,6 +1476,7 @@ export class ProfilesService {
                                     Accept:
                                         'application/vnd.github+json',
                                 },
+                                timeout: 10_000,
                             },
                         );
 
@@ -1617,10 +1498,6 @@ export class ProfilesService {
                     );
 
                 } catch (error) {
-
-                    console.log(
-                        `Could not get languages for ${repository.name}`,
-                    );
                 }
             }
 
@@ -1755,29 +1632,6 @@ export class ProfilesService {
             );
 
 
-            console.log(
-                '\n========== GITHUB SYNC COMPLETED ==========\n',
-            );
-
-
-            console.log(
-                'Repositories:',
-                repositoryNames,
-            );
-
-
-            console.log(
-                'Languages:',
-                programmingLanguages,
-            );
-
-
-            console.log(
-                'Skills:',
-                githubSkills,
-            );
-
-
             return {
 
                 message:
@@ -1799,17 +1653,6 @@ export class ProfilesService {
             };
 
         } catch (error: any) {
-
-            console.error(
-                '\n========== GITHUB SYNC ERROR ==========\n',
-            );
-
-            console.error(
-                error.response?.data ||
-                error.message,
-            );
-
-
             if (
                 error.response?.status === 404
             ) {

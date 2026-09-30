@@ -248,7 +248,10 @@ export class AuthService {
             }>(
                 config.tokenUrl,
                 new URLSearchParams(tokenParams).toString(),
-                { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+                {
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    timeout: 10_000,
+                },
             );
 
             failureCode = 'profile_fetch_failed';
@@ -258,6 +261,7 @@ export class AuthService {
                     headers: {
                         Authorization: `Bearer ${tokenResponse.data.access_token}`,
                     },
+                    timeout: 10_000,
                 },
             );
             const profile = profileResponse.data;
@@ -292,6 +296,13 @@ export class AuthService {
                     if (profile.email_verified !== true) {
                         throw new UnauthorizedException(
                             'Cannot link an existing account without a verified provider email',
+                        );
+                    }
+
+                    if (user.password) {
+                        failureCode = 'account_conflict';
+                        throw new ConflictException(
+                            'An account with this email already exists. Sign in using its existing method; it will not be linked automatically.',
                         );
                     }
 

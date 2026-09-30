@@ -7,6 +7,7 @@ import {
     UploadedFile,
     UseGuards,
     UseInterceptors,
+    ParseFilePipeBuilder,
 } from '@nestjs/common';
 
 import {
@@ -129,8 +130,20 @@ export class ProfilesController {
         @Req()
         request: any,
 
-        @UploadedFile()
-        file: any,
+        @UploadedFile(
+            new ParseFilePipeBuilder()
+                .addFileTypeValidator({
+                    fileType:
+                        /^application\/(pdf|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)$/,
+                })
+                .addMaxSizeValidator({
+                    maxSize: 10 * 1024 * 1024,
+                })
+                .build({
+                    errorHttpStatusCode: 400,
+                }),
+        )
+        file: Express.Multer.File,
 
     ) {
 

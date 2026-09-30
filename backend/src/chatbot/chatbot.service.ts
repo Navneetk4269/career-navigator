@@ -143,7 +143,7 @@ export class ChatbotService {
 
                     console.error(
                         `Chatbot Gemini ${model} attempt ${attempt} failed:`,
-                        error,
+                        `${error?.name || 'Error'} (status: ${status || 'unknown'})`,
                     );
 
                     // Don't retry permanent errors
@@ -359,7 +359,7 @@ Return ONLY valid JSON:
         } catch (error) {
             console.error(
                 'Chatbot suggested questions error:',
-                error,
+                error instanceof Error ? error.name : 'Unknown error',
             );
 
             // Safe fallback
@@ -567,7 +567,7 @@ Answer the user's question now.
         } catch (error: any) {
             console.error(
                 'Career Navigator chatbot error:',
-                error,
+                error?.name || 'Unknown error',
             );
 
             // Give a more useful error for Gemini 503

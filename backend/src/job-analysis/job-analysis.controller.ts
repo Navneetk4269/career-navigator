@@ -17,6 +17,7 @@ import {
 import {
     JwtAuthGuard,
 } from '../auth/jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 
 
 @Controller('job-analysis')
@@ -32,6 +33,7 @@ export class JobAnalysisController {
 
 
     @Post('analyze')
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
     async analyzeJob(
         @Req() req: any,
     ) {

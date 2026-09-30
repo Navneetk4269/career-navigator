@@ -11,6 +11,7 @@ import {
     BadRequestException,
     ParseFilePipeBuilder,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -39,6 +40,7 @@ export class CareersController {
     // =====================================
 
     @Post('recommend')
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
     async recommendCareers(
         @Request() req: any,
     ) {

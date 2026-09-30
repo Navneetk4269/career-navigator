@@ -440,7 +440,7 @@ Return exactly this structure:
 
                         console.error(
                             `Job Analysis Gemini ${model} attempt ${attempt} failed:`,
-                            error?.message,
+                            `${error?.name || 'Error'} (status: ${status || 'unknown'})`,
                         );
 
 
@@ -909,7 +909,7 @@ Return exactly this structure:
 
             console.error(
                 'Gemini Job Analysis Error:',
-                error,
+                error instanceof Error ? error.name : 'Unknown error',
             );
 
 

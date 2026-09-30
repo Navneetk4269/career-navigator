@@ -458,7 +458,7 @@ RETURN EXACTLY THIS STRUCTURE:
 
                         console.error(
                             `Gemini ${model} attempt ${attempt} failed:`,
-                            error?.message,
+                            `${error?.name || 'Error'} (status: ${status || 'unknown'})`,
                         );
 
                         // Only retry/fallback for temporary
@@ -995,7 +995,7 @@ RETURN EXACTLY THIS STRUCTURE:
 
             console.error(
                 'Market demand generation error:',
-                error,
+                error instanceof Error ? error.name : 'Unknown error',
             );
 
             throw new InternalServerErrorException(

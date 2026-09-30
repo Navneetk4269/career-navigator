@@ -1,10 +1,11 @@
 
 import {
+    ArrayMaxSize,
     IsArray,
     IsInt,
-    IsNotEmpty,
     IsOptional,
     IsString,
+    MaxLength,
 } from 'class-validator';
 
 export class CreateProfileDto {
@@ -15,10 +16,12 @@ export class CreateProfileDto {
 
     @IsOptional()
     @IsString()
+    @MaxLength(200)
     education?: string;
 
     @IsOptional()
     @IsString()
+    @MaxLength(200)
     college?: string;
 
     @IsOptional()
@@ -32,10 +35,16 @@ export class CreateProfileDto {
 
     @IsOptional()
     @IsArray()
+    @ArrayMaxSize(50)
+    @IsString({ each: true })
+    @MaxLength(50, { each: true })
     skills?: string[];
 
     @IsOptional()
     @IsArray()
+    @ArrayMaxSize(50)
+    @IsString({ each: true })
+    @MaxLength(50, { each: true })
     interests?: string[];
 
 
@@ -45,6 +54,7 @@ export class CreateProfileDto {
 
     @IsOptional()
     @IsString()
+    @MaxLength(5000)
     jobDescription?: string;
 
     @IsOptional()
@@ -58,14 +68,21 @@ export class CreateProfileDto {
 
     @IsOptional()
     @IsString()
+    @MaxLength(39)
     githubUsername?: string;
 
     @IsOptional()
     @IsArray()
+    @ArrayMaxSize(50)
+    @IsString({ each: true })
+    @MaxLength(200, { each: true })
     githubRepositories?: string[];
 
     @IsOptional()
     @IsArray()
+    @ArrayMaxSize(50)
+    @IsString({ each: true })
+    @MaxLength(50, { each: true })
     programmingLanguages?: string[];
 
 
@@ -75,9 +92,11 @@ export class CreateProfileDto {
 
     @IsOptional()
     @IsString()
+    @MaxLength(1000)
     bio?: string;
 
     @IsOptional()
     @IsString()
+    @MaxLength(255)
     resumeFileName?: string;
 }

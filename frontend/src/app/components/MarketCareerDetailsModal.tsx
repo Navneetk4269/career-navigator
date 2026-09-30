@@ -193,6 +193,10 @@ export default function MarketCareerDetailsModal({
 
                     {/* SCORE CARDS */}
 
+                    <p className="mb-4 text-xs font-medium text-slate-500">
+                        AI-estimated indicators, not official market data.
+                    </p>
+
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
                             <p className="text-xs font-bold uppercase tracking-wider text-slate-500">

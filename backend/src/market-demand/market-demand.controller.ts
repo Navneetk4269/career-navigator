@@ -10,6 +10,7 @@ import {
 import { MarketDemandService } from './market-demand.service';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('market-demand')
 @UseGuards(JwtAuthGuard)
@@ -26,6 +27,7 @@ export class MarketDemandController {
     // ================================================
 
     @Post('generate')
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
     async generateMarketDemand(
         @Request() req: any,
     ) {

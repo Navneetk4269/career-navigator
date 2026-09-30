@@ -1370,6 +1370,10 @@ export default function Explorer() {
                 Explore careers that are currently in demand
                 and see how your skills compare.
               </p>
+
+              <p className="mt-2 text-xs font-medium text-slate-500">
+                AI-estimated indicators, not official market data.
+              </p>
             </div>
 
             <button

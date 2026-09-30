@@ -397,12 +397,12 @@ export default function Home() {
 
             <div className="rounded-2xl border border-white/80 bg-white/70 p-5 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md">
 
-              <p className="text-3xl font-black text-slate-900">
-                10k+
+              <p className="text-xl font-black text-slate-900">
+                Personalized career paths
               </p>
 
               <p className="mt-1 text-sm text-slate-500">
-                Careers explored
+                Recommendations shaped around your profile
               </p>
 
             </div>
@@ -410,12 +410,12 @@ export default function Home() {
 
             <div className="rounded-2xl border border-white/80 bg-white/70 p-5 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md">
 
-              <p className="text-3xl font-black text-slate-900">
-                200+
+              <p className="text-xl font-black text-slate-900">
+                Skill-gap insights
               </p>
 
               <p className="mt-1 text-sm text-slate-500">
-                Career paths mapped
+                See strengths and skills to build
               </p>
 
             </div>
@@ -423,12 +423,12 @@ export default function Home() {
 
             <div className="rounded-2xl border border-white/80 bg-white/70 p-5 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md">
 
-              <p className="text-3xl font-black text-slate-900">
-                4.8/5
+              <p className="text-xl font-black text-slate-900">
+                Learning roadmaps
               </p>
 
               <p className="mt-1 text-sm text-slate-500">
-                Average user rating
+                Turn career goals into actionable steps
               </p>
 
             </div>
@@ -468,7 +468,7 @@ export default function Home() {
 
             <p className="mt-5 text-base leading-7 text-slate-500">
 
-              Three simple steps to discover your strengths and build
+              Two simple steps to discover your strengths and build
               a career path designed around you.
 
             </p>
