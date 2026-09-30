@@ -153,6 +153,7 @@ export class AuthService {
     ) {
         const frontendUrl = this.getFrontendUrl();
         const provider = this.getProvider(providerName);
+        let failureCode = 'provider_error';
 
         try {
             const config = this.getOAuthConfig(provider);
@@ -169,11 +170,13 @@ export class AuthService {
                 secure: config.redirectUri.startsWith('https://'),
             });
 
+            failureCode = 'state_error';
             if (!code || !state || !savedState || !verifier ||
                 !this.safeEqual(state, savedState)) {
                 throw new UnauthorizedException('Invalid OAuth state');
             }
 
+            failureCode = 'token_exchange_failed';
             const tokenResponse = await axios.post<{
                 access_token: string;
             }>(
@@ -189,6 +192,7 @@ export class AuthService {
                 { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
             );
 
+            failureCode = 'profile_fetch_failed';
             const profileResponse = await axios.get<OAuthProfile>(
                 config.userInfoUrl,
                 {
@@ -199,12 +203,14 @@ export class AuthService {
             );
             const profile = profileResponse.data;
 
-            if (!profile.sub || !profile.email || profile.email_verified !== true) {
+            failureCode = 'profile_missing';
+            if (!profile.sub) {
                 throw new UnauthorizedException(
-                    'Provider did not return a verified email address',
+                    'Provider did not return a member identifier',
                 );
             }
 
+            failureCode = 'account_lookup_failed';
             const providerField = provider === 'google'
                 ? 'googleId'
                 : 'linkedinId';
@@ -214,9 +220,24 @@ export class AuthService {
             );
 
             if (!user) {
+                failureCode = 'email_not_shared';
+                if (!profile.email) {
+                    throw new UnauthorizedException(
+                        'Provider did not share an email address',
+                    );
+                }
+
                 user = await this.usersService.findByEmail(profile.email);
                 if (user) {
+                    failureCode = 'email_unverified';
+                    if (profile.email_verified !== true) {
+                        throw new UnauthorizedException(
+                            'Cannot link an existing account without a verified provider email',
+                        );
+                    }
+
                     if (user[providerField] && user[providerField] !== profile.sub) {
+                        failureCode = 'account_conflict';
                         throw new ConflictException(
                             'This email is linked to a different social account',
                         );
@@ -224,6 +245,7 @@ export class AuthService {
                     user[providerField] = profile.sub;
                     await user.save();
                 } else {
+                    failureCode = 'account_creation_failed';
                     user = await this.usersService.createOAuthUser(
                         profile.name?.trim() || profile.email.split('@')[0],
                         profile.email,
@@ -233,6 +255,7 @@ export class AuthService {
                 }
             }
 
+            failureCode = 'session_creation_failed';
             if (!user) {
                 throw new UnauthorizedException('Unable to find or create user');
             }
@@ -248,9 +271,13 @@ export class AuthService {
             return response.redirect(
                 `${frontendUrl}/auth/callback#${fragment.toString()}`,
             );
-        } catch {
+        } catch (error) {
+            console.error(
+                `OAuth ${provider} callback failed (${failureCode}):`,
+                error instanceof Error ? error.message : 'Unknown error',
+            );
             return response.redirect(
-                `${frontendUrl}/auth/callback?error=social_login_failed`,
+                `${frontendUrl}/auth/callback?error=${failureCode}`,
             );
         }
     }

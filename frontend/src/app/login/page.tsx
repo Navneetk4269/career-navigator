@@ -12,8 +12,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).has("oauthError")) {
-      showPopup("Social sign-in failed. Please try again.");
+    const error = new URLSearchParams(window.location.search).get("oauthError");
+    if (error) {
+      const message = error === "email_not_shared"
+        ? "LinkedIn did not share your email. Enable the email permission or use email and password."
+        : error === "email_unverified"
+          ? "LinkedIn did not verify this email, so we could not link it to your existing account."
+          : error === "state_error"
+            ? "The sign-in session expired or could not be verified. Please try again."
+            : "Social sign-in could not finish. Check the provider settings and try again.";
+      showPopup(message);
       window.history.replaceState({}, "", "/login");
     }
   }, [showPopup]);

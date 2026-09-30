@@ -13,7 +13,9 @@ export default function AuthCallback() {
     const userJson = params.get("user");
 
     if (error || !accessToken || !userJson) {
-      router.replace("/login?oauthError=1");
+      router.replace(
+        `/login?oauthError=${encodeURIComponent(error || "provider_error")}`,
+      );
       return;
     }
 
@@ -31,7 +33,7 @@ export default function AuthCallback() {
       window.dispatchEvent(new Event("career-navigator-auth-change"));
       router.replace(user.profileCompleted ? "/" : "/profile");
     } catch {
-      router.replace("/login?oauthError=1");
+      router.replace("/login?oauthError=provider_error");
     }
   }, [router]);
 

@@ -1041,8 +1041,8 @@ export default function Profile() {
 
             </Field>
 
-            {/* Resume */}
-            <Field label="Resume" className="mt-5">
+            {/* Resume and LinkedIn PDF import */}
+            <Field label="Resume or LinkedIn profile PDF" className="mt-5">
 
               <div
                 onDragOver={(e) => {
@@ -1061,7 +1061,7 @@ export default function Profile() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,.docx"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -1087,18 +1087,17 @@ export default function Profile() {
                 ) : (
                   <>
                     <p className="text-sm font-medium text-slate-600">
-                      Drag & drop your resume, or click to browse
+                      Drag & drop a resume or LinkedIn profile PDF, or click to browse
                     </p>
 
                     <p className="text-xs text-slate-400">
-                      PDF or Word, up to 10MB
+                      PDF or DOCX, up to 10MB
                     </p>
                   </>
                 )}
               </div>
               <p className="mt-1.5 text-xs text-slate-400">
-                Upload your resume and click Extract Resume Data to automatically detect
-                skills, education, college, graduation year, and bio.
+                On LinkedIn, open your profile and choose More, then Save to PDF. Upload that PDF and extract skills, education, college, graduation year, and bio.
               </p>
 
             </Field>
