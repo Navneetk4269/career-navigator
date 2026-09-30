@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     ServiceUnavailableException,
@@ -11,6 +12,7 @@ import { UsersService } from '../users/users.service';
 
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 import { AchievementsService } from '../achievements/achievements.service';
 
@@ -109,6 +111,49 @@ export class AuthService {
         }
 
         return this.createLoginResult(user);
+    }
+
+    async changePassword(userId: string, dto: ChangePasswordDto) {
+        const user = await this.usersService.findById(userId);
+
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        if (user.password) {
+            if (!dto.currentPassword) {
+                throw new BadRequestException(
+                    'Enter your current password',
+                );
+            }
+
+            const isCurrentPasswordValid = await bcrypt.compare(
+                dto.currentPassword,
+                user.password,
+            );
+
+            if (!isCurrentPasswordValid) {
+                throw new UnauthorizedException(
+                    'Current password is incorrect',
+                );
+            }
+
+            const isSamePassword = await bcrypt.compare(
+                dto.newPassword,
+                user.password,
+            );
+
+            if (isSamePassword) {
+                throw new BadRequestException(
+                    'New password must be different from your current password',
+                );
+            }
+        }
+
+        user.password = await bcrypt.hash(dto.newPassword, 10);
+        await user.save();
+
+        return { message: 'Password updated successfully' };
     }
 
     startOAuth(providerName: string, response: Response) {

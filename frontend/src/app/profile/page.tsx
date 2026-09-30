@@ -34,6 +34,10 @@ export default function Profile() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const [syncingGithub, setSyncingGithub] = useState(false);
   const [extractingResume, setExtractingResume] = useState(false);
@@ -420,6 +424,53 @@ export default function Profile() {
       showPopup("Unable to connect to the server.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePasswordChange(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      showPopup("The new passwords do not match.", "error");
+      return;
+    }
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      showPopup("Please sign in first.", "error");
+      window.location.href = "/login";
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: currentPassword || undefined,
+          newPassword,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        showPopup(data?.message || "Unable to update password.", "error");
+        return;
+      }
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      showPopup("Password updated successfully.", "success");
+    } catch (error) {
+      console.error("Password update error:", error);
+      showPopup("Unable to connect to the server.", "error");
+    } finally {
+      setChangingPassword(false);
     }
   }
 
@@ -1260,6 +1311,69 @@ We are looking for a Frontend Developer with experience in React, JavaScript, Ty
           </div>
 
         </form>
+
+        <section className="mt-8 rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-[0_18px_50px_-22px_rgba(15,23,42,0.22)] backdrop-blur-xl sm:p-8">
+          <SectionHeading
+            title="Account Security"
+            subtitle="Update the password used to sign in."
+            color="blue"
+            icon={
+              <>
+                <rect x="4" y="11" width="16" height="9" rx="2" stroke="currentColor" strokeWidth="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </>
+            }
+          />
+
+          <form onSubmit={handlePasswordChange} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Current password">
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                autoComplete="current-password"
+                placeholder="Required if you already have a password"
+                className={inputClass}
+              />
+            </Field>
+
+            <div className="hidden sm:block" />
+
+            <Field label="New password">
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                autoComplete="new-password"
+                minLength={6}
+                required
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label="Confirm new password">
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                autoComplete="new-password"
+                minLength={6}
+                required
+                className={inputClass}
+              />
+            </Field>
+
+            <div className="sm:col-span-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={changingPassword}
+                className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {changingPassword ? "Updating..." : "Update Password"}
+              </button>
+            </div>
+          </form>
+        </section>
       </div>
     </main>
   );

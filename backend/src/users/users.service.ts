@@ -21,6 +21,10 @@ export class UsersService {
         });
     }
 
+    async findById(userId: string) {
+        return this.userModel.findById(userId);
+    }
+
     async findByOAuthId(
         providerField: 'googleId' | 'linkedinId',
         providerId: string,
