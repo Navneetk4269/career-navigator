@@ -3,6 +3,7 @@
 import {
     createContext,
     useContext,
+    useEffect,
     useState,
     ReactNode,
 } from "react";
@@ -10,6 +11,12 @@ import {
 import MsgPopup from "./msgpopup";
 
 type PopupType = "success" | "error" | "warning" | "info";
+
+type AchievementNotification = {
+    id: string;
+    title: string;
+    icon: string;
+};
 
 type PopupContextType = {
     showPopup: (
@@ -31,6 +38,57 @@ export function PopupProvider({
         message: string;
         type: PopupType;
     } | null>(null);
+    const [achievementQueue, setAchievementQueue] =
+        useState<AchievementNotification[]>([]);
+
+    useEffect(() => {
+        const consumeAchievements = () => {
+            const storedAchievements =
+                sessionStorage.getItem("newAchievements");
+
+            if (!storedAchievements) {
+                return;
+            }
+
+            sessionStorage.removeItem("newAchievements");
+
+            try {
+                const parsed: unknown = JSON.parse(storedAchievements);
+                if (!Array.isArray(parsed)) {
+                    return;
+                }
+
+                const validAchievements = parsed.filter(
+                    (achievement): achievement is AchievementNotification =>
+                        typeof achievement?.id === "string" &&
+                        typeof achievement?.title === "string" &&
+                        typeof achievement?.icon === "string",
+                );
+
+                if (validAchievements.length > 0) {
+                    setAchievementQueue((queue) => [
+                        ...queue,
+                        ...validAchievements,
+                    ]);
+                }
+            } catch (error) {
+                console.error("Failed to read achievement notifications:", error);
+            }
+        };
+
+        consumeAchievements();
+        window.addEventListener(
+            "career-navigator-auth-change",
+            consumeAchievements,
+        );
+
+        return () => {
+            window.removeEventListener(
+                "career-navigator-auth-change",
+                consumeAchievements,
+            );
+        };
+    }, []);
 
     const showPopup = (
         message: string,
@@ -55,6 +113,15 @@ export function PopupProvider({
                     message={popup.message}
                     type={popup.type}
                     onClose={closePopup}
+                />
+            )}
+
+            {!popup && achievementQueue.length > 0 && (
+                <MsgPopup
+                    message={`🎉 Achievement Unlocked: ${achievementQueue[0].icon} ${achievementQueue[0].title}`}
+                    type="success"
+                    duration={5000}
+                    onClose={() => setAchievementQueue((queue) => queue.slice(1))}
                 />
             )}
         </PopupContext.Provider>

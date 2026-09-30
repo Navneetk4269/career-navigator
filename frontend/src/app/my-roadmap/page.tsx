@@ -115,8 +115,8 @@ export default function MyRoadmapPage() {
     const [proofMessage, setProofMessage] = useState("");
     const [proofError, setProofError] = useState("");
 
-    const [achievementPopup, setAchievementPopup] =
-    useState<Achievement | null>(null);
+    const [achievementQueue, setAchievementQueue] =
+        useState<Array<Pick<Achievement, "id" | "title" | "icon">>>([]);
     const knownAchievementIds = useRef<Set<string> | null>(null);
 
     const selectedPhase =
@@ -176,19 +176,19 @@ export default function MyRoadmapPage() {
                     )
                 );
             } else {
-                const newAchievement =
-                    currentAchievements.find(
-                        (achievement) =>
-                            !knownAchievementIds.current!.has(
-                                achievement.id
-                            )
-                    );
+                const newAchievements = currentAchievements.filter(
+                    (achievement) =>
+                        !knownAchievementIds.current!.has(achievement.id)
+                );
 
-                if (newAchievement) {
-                    setAchievementPopup(newAchievement);
+                if (newAchievements.length > 0) {
+                    setAchievementQueue((queue) => [
+                        ...queue,
+                        ...newAchievements,
+                    ]);
 
-                    knownAchievementIds.current.add(
-                        newAchievement.id
+                    newAchievements.forEach((achievement) =>
+                        knownAchievementIds.current!.add(achievement.id)
                     );
                 }
             }
@@ -355,8 +355,16 @@ export default function MyRoadmapPage() {
                 data?.achievementsUnlocked &&
                 data.achievementsUnlocked.length > 0
             ) {
-                setAchievementPopup(
-                    data.achievementsUnlocked[0]
+                const unlockedAchievements =
+                    data.achievementsUnlocked as Array<
+                        Pick<Achievement, "id" | "title" | "icon">
+                    >;
+                setAchievementQueue((queue) => [
+                    ...queue,
+                    ...unlockedAchievements,
+                ]);
+                unlockedAchievements.forEach((achievement) =>
+                    knownAchievementIds.current?.add(achievement.id)
                 );
             }
 
@@ -1357,12 +1365,12 @@ export default function MyRoadmapPage() {
 
                 </div>
 
-                {achievementPopup && (
+                {achievementQueue.length > 0 && (
                     <MsgPopup
-                        message={`🎉 Achievement Unlocked: ${achievementPopup.icon} ${achievementPopup.title}`}
+                        message={`🎉 Achievement Unlocked: ${achievementQueue[0].icon} ${achievementQueue[0].title}`}
                         type="success"
                         duration={5000}
-                        onClose={() => setAchievementPopup(null)}
+                        onClose={() => setAchievementQueue((queue) => queue.slice(1))}
                     />
                 )}
 

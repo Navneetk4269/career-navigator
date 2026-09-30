@@ -16,6 +16,7 @@ import {
     Career,
     CareerDocument,
 } from '../careers/schemas/career.schema';
+import { calculateLoginStreak } from './login-streak';
 
 @Injectable()
 export class AchievementsService {
@@ -211,32 +212,11 @@ export class AchievementsService {
 
     async processLogin(user: UserDocument) {
         const today = new Date();
-
-        today.setHours(0, 0, 0, 0);
-
-        let streak = user.loginStreak || 0;
-
-        if (!user.lastLoginDate) {
-            streak = 1;
-        } else {
-            const lastLogin =
-                new Date(user.lastLoginDate);
-
-            lastLogin.setHours(0, 0, 0, 0);
-
-            const difference =
-                today.getTime() -
-                lastLogin.getTime();
-
-            const oneDay =
-                24 * 60 * 60 * 1000;
-
-            if (difference === oneDay) {
-                streak += 1;
-            } else if (difference > oneDay) {
-                streak = 1;
-            }
-        }
+        const streak = calculateLoginStreak(
+            user.loginStreak || 0,
+            user.lastLoginDate,
+            today,
+        );
 
         user.loginStreak = streak;
         user.lastLoginDate = new Date();

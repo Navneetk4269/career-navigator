@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import LogoutButton from "../components/LogoutButton";
-import MsgPopup from "../components/msgpopup";
 
 type SkillGap = {
   skill: string;
@@ -682,39 +681,9 @@ export default function Dashboard() {
 
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loginStreak, setLoginStreak] = useState(0);
-  const [achievementPopup, setAchievementPopup] =
-    useState<Achievement | null>(null);
 
   useEffect(() => {
       loadDashboard();
-
-      const storedAchievements =
-          sessionStorage.getItem("newAchievements");
-
-      if (storedAchievements) {
-          try {
-              const parsedAchievements =
-                  JSON.parse(storedAchievements);
-
-              if (
-                  Array.isArray(parsedAchievements) &&
-                  parsedAchievements.length > 0
-              ) {
-                  setAchievementPopup(
-                      parsedAchievements[0]
-                  );
-              }
-          } catch (error) {
-              console.error(
-                  "Failed to read achievement popup:",
-                  error
-              );
-          }
-
-          sessionStorage.removeItem(
-              "newAchievements"
-          );
-      }
   }, []);
 
   async function loadDashboard() {
@@ -2251,15 +2220,6 @@ export default function Dashboard() {
           await loadDashboard();
         }}
       />
-
-      {achievementPopup && (
-          <MsgPopup
-              message={`🎉 Achievement Unlocked: ${achievementPopup.icon} ${achievementPopup.title}`}
-              type="success"
-              duration={5000}
-              onClose={() => setAchievementPopup(null)}
-          />
-      )}
 
     </main>
   );
